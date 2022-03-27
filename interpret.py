@@ -27,11 +27,13 @@ argp.add_argument("--input", nargs= 1, help= "TODO")
 
 args = argp.parse_args()
 
-print()
 # load xml
 tree = ET.parse(listToString(args.source))
 
 root = tree.getroot()
+
+if root.tag != 'program': # how do I do this? no clue
+    exit (31)
 
 print(root.tag, root.attrib)
 for child in root:
