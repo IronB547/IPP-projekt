@@ -33,7 +33,11 @@ tree = ET.parse(listToString(args.source))
 
 root = tree.getroot()
 
-print(root.attrib)
+print(root.tag, root.attrib)
+for child in root:
+    print(child.tag, child.attrib)
+
+
 #checks
 
 #if root.tag != 'program':
