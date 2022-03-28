@@ -1,7 +1,6 @@
 import argparse
 import re
 import xml.etree.ElementTree as ET
-from xml.parsers.expat import ParserCreate, ExpatError, errors
 
 class arg:
 	def __init__(self, arg_type, value):
@@ -28,30 +27,17 @@ argp.add_argument("--input", nargs= 1, help= "TODO")
 
 args = argp.parse_args()
 
-parse_check = ParserCreate()
-
-print(args.source[0])
-
-#try:
-#	parse_check.Parse(args.source[0])
-#except ExpatError as err:
-#
-#	print(err)
-#	print(errors.messages[4])
-#	exit (31)
-#
-#	if err == errors.messages[4]:
-#		print(err, "\n")
-#		print(errors.messages[4])
-#		exit (31)
-
-	#	exit (31)
+try:
+	tree = ET.parse(args.source[0])
+except:
+	print("Error 31")
+	exit (31)
 
 # load xml
-tree = ET.parse(args.source[0])
-
 root = tree.getroot()
+elem = ET.ElementTree(args.source[0])
 
+#print(elem.getroot())
 print(root.tag, root.attrib)
 for child in root:
 	print(child.tag, child.attrib)
@@ -59,18 +45,18 @@ for child in root:
 
 #checks
 
-#if root.tag != 'program':
+#if root.tag != 'program': # don't have to, already error 31
 #	# shod
 #
 #for child in root:
-#	if child.tag != 'instruction':
+#	if child.tag != 'instruction': # don't have to, already error 31
 #		# shod
 #
-#	ca = list(child.attrib.keys())
+#	ca = list(child.attrib.keys()) # I need to check these
 #	if not('order')
 #		# shod
 #
-#	for subelem in child:
+#	for subelem in child: # idk much about this but we'll see
 #		if not(re.match(r"arg[123]", subelem.tag)):
 #			#shod
 #
