@@ -69,7 +69,21 @@ for child in root:
 		#print("ARG:", arg.tag, arg.items(), arg.get(key='type'), arg.text, "\n")
 
 		if re.match("arg1", arg.tag):
+			instruction.add_argument(arg.get(key='type'), arg.text)
+			flag_arg1 = True
 
+		elif re.match("arg2", arg.tag) and flag_arg1:
+			instruction.add_argument(arg.get(key='type'), arg.text)
+			flag_arg2 = True
+
+		elif re.match("arg3", arg.tag) and flag_arg2:
+			instruction.add_argument(arg.get(key='type'), arg.text)
+
+		elif not flag_arg1:
+			print("Error 32")
+			exit(32)
+
+	print(len(instruction.args))
 
 #		print(len(instruction.args))
 #
