@@ -35,22 +35,62 @@ if root.tag != "program" or root.get(key='language') != "IPPcode22":
 	print("Error 32")
 	exit (32)
 
-print(root.tag, root.items(), root.get(key='language'))
+#print("ROOT:", root.tag, root.items(), root.get(key='language'))
+first_iter = True
 for child in root:
 	if child.tag != 'instruction':
 		print("Error 32")
 		exit (32)
 
-	print(child.tag, child.items(), child.get(key='order'), child.get(key='opcode'))
+	if first_iter == True:
+		if int(child.get(key='order')) == 1:
+			op_num = int(child.get(key='order'))
+		else:
+			print("Error 32")
+			exit(32)
+
+	if int(op_num) < 1:
+		print("Error 32")
+		exit(32)
+
+	if op_num != int(child.get(key='order')) - 1 and first_iter == False:
+		print("Error 32")
+		exit(32)
+
+	op_num = int(child.get(key='order'))
+	first_iter = False
+
+	print("CHILD:", child.tag, child.items(), child.get(key='order'), child.get(key='opcode'))
 	instruction = Instruction(name=child.get(key='opcode'), number=child.get(key='order'))
 
-
+	flag_arg1 = False
+	flag_arg2 = False
 	for arg in child:
-		print(arg.tag, arg.items(), arg.get(key='type'), arg.text, "\n")
-		instruction.add_argument(arg.get(key='type'), arg.text)
-		print(instruction.args)
+		#print("ARG:", arg.tag, arg.items(), arg.get(key='type'), arg.text, "\n")
 
-	print("\n")
+		if re.match("arg1", arg.tag):
+
+
+#		print(len(instruction.args))
+#
+#		if re.match("arg1", arg.tag):
+#			instruction.add_argument(arg.get(key='type'), arg.text)
+#			flag_arg1 = True
+#			print(len(instruction.args))
+#			continue
+#
+#		if flag_arg1 and re.match("arg2", arg.tag):
+#			instruction.add_argument(arg.get(key='type'), arg.text)
+#			flag_arg2 = True
+#			print(len(instruction.args))
+#			continue
+#
+#		if flag_arg1 and flag_arg2 and re.match("arg3", arg.tag):
+#			instruction.add_argument(arg.get(key='type'), arg.text)
+#		else:
+#			print("Error 32")
+#			exit(32)
+
 
 #for instruction in root:
 #	print(instruction.keys())
