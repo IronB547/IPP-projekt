@@ -2,24 +2,19 @@ import argparse
 import re
 import xml.etree.ElementTree as ET
 
-class arg:
+class Argument:
 	def __init__(self, arg_type, value):
 		self.type = arg_type
 		self.value = value
 
-class instruction:
+class Instruction:
 	def __init__(self, name, number):
 		self.name = name
 		self.number = number
 		self.args = []
 	def add_argument(self, arg_type, value):
-		self.args.append(arg(arg_type, value))
+		self.args.append(Argument(arg_type, value))
 		# argparse
-
-def listToString(list):
-	str1 = " "
-
-	return (str1.join(list))
 
 argp = argparse.ArgumentParser()
 argp.add_argument("--source", nargs= 1, type=argparse.FileType('r'), help= "TODO")
@@ -35,21 +30,38 @@ except:
 
 # load xml
 root = tree.getroot()
-elem = ET.ElementTree(args.source[0])
 
-#print(elem.getroot())
-print(root.tag, root.attrib)
+if root.tag != "program" or root.get(key='language') != "IPPcode22":
+	print("Error 32")
+	exit (32)
+
+print(root.tag, root.items(), root.get(key='language'))
 for child in root:
-	print(child.tag, child.attrib)
+	if child.tag != 'instruction':
+		print("Error 32")
+		exit (32)
+
+	print(child.tag, child.items(), child.get(key='order'), child.get(key='opcode'))
+	instruction = Instruction(name=child.get(key='opcode'), number=child.get(key='order'))
 
 
+	for arg in child:
+		print(arg.tag, arg.items(), arg.get(key='type'), arg.text, "\n")
+		instruction.add_argument(arg.get(key='type'), arg.text)
+		print(instruction.args)
+
+	print("\n")
+
+#for instruction in root:
+#	print(instruction.keys())
+#	print(instruction.items())
 #checks
 
-#if root.tag != 'program': # don't have to, already error 31
+#if root.tag != 'program': # nvm, you MUST check for this, it's also correct, root.tag is program
 #	# shod
 #
 #for child in root:
-#	if child.tag != 'instruction': # don't have to, already error 31
+#	if child.tag != 'instruction': # 
 #		# shod
 #
 #	ca = list(child.attrib.keys()) # I need to check these
