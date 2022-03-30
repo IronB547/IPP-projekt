@@ -1,6 +1,82 @@
 import argparse
 import re
 import xml.etree.ElementTree as ET
+from enum import Enum
+
+class Functions(Enum):
+	DEFVAR = 0
+	MOVE = 1
+	ADD = 2
+	WRITE = 3
+	CREATEFRAME = 4
+	PUSHFRAME = 5
+	POPFRAME = 6
+	CALL = 7
+	RETURN = 8
+	PUSHS = 9
+	POPS = 10
+	SUB = 11
+	MUL = 12
+	IDIV = 13
+	LT = 14
+	GT = 15
+	EQ = 16
+	AND = 17
+	OR = 18
+	NOT = 19
+	INT2CHAR = 20
+	STRI2INT = 21
+	READ = 22
+	CONCAT = 24
+	STRLEN = 25
+	GETCHAR = 26
+	SETCHAR = 27
+	TYPE = 28
+	LABEL = 29
+	JUMP = 30
+	JUMPIFEQ = 31
+	JUMPIFNEQ = 32
+	EXIT = 33
+	DPRINT = 34
+	BREAK = 35
+
+CONST_FUNC = 	[[1, 'DEFVAR'],
+				[2, 'MOVE'],
+				[3, 'ADD'],
+				[1, 'WRITE'],
+				[0, 'CREATEFRAME'],
+            	[0, 'PUSHFRAME'],
+                [0, 'POPFRAME'],
+                [1, 'CALL'],
+                [0, 'RETURN'],
+                [1, 'PUSHS'],
+                [1, 'POPS'],
+                [3, 'SUB'],
+                [3, 'MUL'],
+                [3, 'IDIV'],
+                [3, 'LT'],
+                [3, 'GT'],
+                [3, 'EQ'],
+                [3, 'AND'],
+                [3, 'OR'],
+                [2, 'NOT'],
+                [2, 'INT2CHAR'],
+                [3, 'STRI2INT'],
+                [2, 'READ'],
+                [1, 'WRITE'],
+                [3, 'CONCAT'],
+                [2, 'STRLEN'],
+                [3, 'GETCHAR'],
+                [3, 'SETCHAR'],
+                [2, 'TYPE'],
+                [1, 'LABEL'],
+                [1, 'JUMP'],
+                [3, 'JUMPIFEQ'],
+                [3, 'JUMPIFNEQ'],
+                [1, 'EXIT'],
+                [1, 'DPRINT'],
+                [0, 'BREAK']
+				]
 
 class Argument:
 	def __init__(self, arg_type, value):
@@ -60,7 +136,7 @@ for child in root:
 	op_num = int(child.get(key='order'))
 	first_iter = False
 
-	print("CHILD:", child.tag, child.items(), child.get(key='order'), child.get(key='opcode'))
+	print("CHILD:", child.get(key='order'), child.get(key='opcode'), child.tag, child.items())
 	instruction = Instruction(name=child.get(key='opcode'), number=child.get(key='order'))
 
 	flag_arg1 = False
@@ -83,7 +159,23 @@ for child in root:
 			print("Error 32")
 			exit(32)
 
-	print(len(instruction.args))
+	found_func = False
+	for func in Functions:
+		if instruction.name == func.name:
+
+			found_func = True
+			func_check = CONST_FUNC[func.value][0]
+			if func_check != len(instruction.args):
+				print("Error 32")
+				exit(32)
+
+	if found_func == False:
+		print("Error 32")
+		exit(32)
+
+
+	# len(instruction.args), instruction.name
+	print("FUNCTIONS: read operands:", len(instruction.args), "opcode", instruction.number, "\n")
 
 #		print(len(instruction.args))
 #
