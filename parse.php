@@ -24,8 +24,8 @@ function incorrect_function_error() { # Incorrect function name.
 }
 
 function other_error() { # Basically anything else.
-	ob_end_clean(); # This will silence the already "generated" XML code.
-	#echo "Error 23\n";
+	#ob_end_clean(); # This will silence the already "generated" XML code.
+	echo "Error 23\n";
 	exit(23);
 }
 
@@ -304,15 +304,15 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 			print_instruction($instruction, $cut);
 			$value = get_val($cut, 1);
 
-			if(preg_match("~\bint\b~", $value[0])) # Can only be int or bool
+			if(preg_match("~\bint\b~", $cut[1])) # Can only be int or bool
 				if (preg_match('/^([0-9]+)\b/', $value))
-					echo("\t\t<arg1 type=\"int\">$value[1]</arg1>")."\n";
+					echo("\t\t<arg1 type=\"int\">$value</arg1>")."\n";
 				else
 					other_error();
 
 			else if(preg_match("~\bbool\b~", $value[0])) {
 				if(str_contains($value[1], "true") || str_contains($value[1], "false")) # Only true/false is accepted.
-					echo("\t\t<arg1 type=\"bool\">$value[1]</arg1>")."\n";
+					echo("\t\t<arg1 type=\"bool\">$value</arg1>")."\n";
 				else
 					other_error();
 			}
@@ -328,9 +328,9 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 			print_instruction($instruction, $cut);
 			$value = get_val($cut, 1);
 
-			if(preg_match("~\bint\b~", $value[0])) # Only int is accepted.
+			if(preg_match("~\bint\b~", $cut[1])) # Only int is accepted.
 				if (preg_match('/^([0-9]+)\b/', $value))
-					echo("\t\t<arg1 type=\"int\">$value[1]</arg1>")."\n";
+					echo("\t\t<arg1 type=\"int\">$value</arg1>")."\n";
 				else
 					other_error();
 			else
@@ -341,7 +341,7 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 
 		case 'READ':
 			check_ops($cut, 2);
-			$value = htmlspecialchars($cut[1]);
+			$value = htmlspecialchars($cut[2]);
 			$value = explode('@', $value);
 
 			print_instruction($instruction, $cut);
@@ -349,8 +349,8 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 			var_only($cut);
 
 			# Same with determine_val, but the arg type is 'type'.
-			if(preg_match("~\bint\b~", $cut[2]))
-				if(preg_match('/^(\+|-|)(0[xX][0-9a-fA-F]+|0b[0-1]+|(0[oO]|0)[0-7]+\b|[0-9]+)\b/', $value))
+			if(preg_match("~\bint\b~", $cut[2])) 
+				if(preg_match('/^(\+|-|)(0[xX][0-9a-fA-F]+|0b[0-1]+|(0[oO]|0)[0-7]+\b|[0-9]+)\b/', $value[1]))
 					echo("\t\t<arg2 type=\"type\">$cut[2]</arg2>")."\n";
 				else
 					other_error();

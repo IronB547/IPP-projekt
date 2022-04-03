@@ -1,0 +1,14 @@
+HIGH PRIORITY:
+
+-Frames, overall function of all frames and variables
+
+-Good job on frames, however, you need to solve MOVing in a variable that has already data, you can't simply append that.
+
+MEDIUM PRIORITY:
+
+-LF and TF Implementation, I think that's secodary, as long as everything on Global works and you have right checks for the other frames, it's good to go.
+
+LOW PRIORITY:
+
+-arg order can be random (arg2 first, then arg1)
+-order can be 10,20,30 not just 1,2,3,4,5

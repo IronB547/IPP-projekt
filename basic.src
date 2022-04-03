@@ -2,9 +2,19 @@
 
 DEFVAR GF@abc
 DEFVAR GF@DEF
+DEFVAR GF@D
+DEFVAR GF@G
+DEFVAR GF@g
+
+MOVE GF@abc string@ahoj
 
 MOVE GF@DEF int@3
+
+MOVE GF@DEF GF@abc
+
 
 ADD GF@abc GF@DEF int@2
 
 WRITE GF@abc
+
+JUMP label
