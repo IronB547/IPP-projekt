@@ -92,10 +92,15 @@ class Frames:
 				print("No LF on frame stack")
 				exit(55)
 
+			self.frame_stack[len(self.frame_stack) - 1].append([var_name])
+
 		if f_type == "TF":
 			if self.tmp_frame == None:
 				print("No TF created")
 				exit(55)
+
+			self.tmp_frame.append([var_name])
+
 	def search_frame(self, f_type, var_name):
 		var_counter = 0
 		if f_type == "GF":
@@ -104,18 +109,39 @@ class Frames:
 				if var_name == self.global_frame[variable][0]:
 					var_counter += 1
 					#print(var_counter)
-				if var_counter > 1:
-					print("Redeclaration of " + var_name)
-					exit(52)
-			#if var_counter == 0:
-				#print("Variable " + var_name + " doesn't exist.")
-				#exit(52)
 
-		#if f_type == "LF":
-			#for variable in self.frame_stack:
+			if instruction.name == 'DEFVAR' and var_counter == 1:
+				print("Redeclaration of variable: " + var_name)
+				exit(52) # Check for correct error TODO
+			elif instruction.name != 'DEFVAR' and var_counter == 0:
+				print("Variable " + var_name + " doesn't exist.")
+				exit(52) # Check for correct error TODO
 
-		#if f_type == "TF":
-			#for variable in self.tmp_frame:
+		elif f_type == "LF":
+			print(self.frame_stack[len(self.frame_stack) - 1][0])
+			for variable in range(len(self.frame_stack)):
+				print(variable)
+				if var_name == self.frame_stack[len(self.frame_stack) - 1][variable]:
+					var_counter += 1
+
+			if instruction.name == 'DEFVAR' and var_counter == 1:
+				print("Redeclaration of variable: " + var_name)
+				exit(52) # Check for correct error TODO
+			elif instruction.name != 'DEFVAR' and var_counter == 0:
+				print("Variable " + var_name + " doesn't exist.")
+				exit(52) # Check for correct error TODO
+
+		elif f_type == "TF":
+			for variable in range(len(self.tmp_frame)):
+				if var_name == self.tmp_frame[variable][0]:
+					var_counter += 1
+
+			if instruction.name == 'DEFVAR' and var_counter == 1:
+				print("Redeclaration of variable: " + var_name)
+				exit(52) # Check for correct error TODO
+			elif instruction.name != 'DEFVAR' and var_counter == 0:
+				print("Variable " + var_name + " doesn't exist.")
+				exit(52) # Check for correct error TODO
 
 	def return_index(self, f_type, var_name):
 		if f_type == "GF":
@@ -187,12 +213,12 @@ def insert_into_var(frame, to_var_indx, from_type, from_value):
 			frames.global_frame[to_var_indx].append(from_value)
 
 	elif frame == 'LF':
-		if len(frames.frame_stack[len(frames.frame_stack)][to_var_indx]) > 1:
-			frames.frame_stack[len(frames.frame_stack)][to_var_indx][1] = from_type
-			frames.frame_stack[len(frames.frame_stack)][to_var_indx][2] = from_value
+		if len(frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx]) > 1:
+			frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx][1] = from_type
+			frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx][2] = from_value
 		else:
-			frames.frame_stack[len(frames.frame_stack)][to_var_indx].append(from_type)
-			frames.frame_stack[len(frames.frame_stack)][to_var_indx].append(from_value)
+			frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx].append(from_type)
+			frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx].append(from_value)
 	else:
 		if len(frames.tmp_frame[to_var_indx]) > 1:
 			frames.tmp_frame[to_var_indx][1] = from_type
@@ -288,9 +314,8 @@ for child in root:
 
 		frames.search_frame(get_frame(0), instruction.args[0].value)
 		frames.add_to_frame(get_frame(0), instruction.args[0].value)
-		print("GLOBAL: ", frames.global_frame)
 
-	if instruction.name == 'MOVE':
+	elif instruction.name == 'MOVE':
 		frames.search_frame(get_frame(0), instruction.args[0].value)
 
 		to_var_indx = var_find_index(0)
@@ -304,13 +329,10 @@ for child in root:
 
 			insert_into_var(get_frame(0), to_var_indx, type, value)
 
-		print("GLOBAL: ", frames.global_frame)
-		#print("I read move! and index is", frames.return_index(get_frame(0), instruction.args[0].value))
-
-	if instruction.name == 'ADD':
+	elif instruction.name == 'ADD':
 		print("I read add!")
 
-	if instruction.name == 'WRITE':
+	elif instruction.name == 'WRITE':
 		to_var_indx = var_find_index(0)
 		if get_frame(0) == 'GF':
 			if len(frames.global_frame[to_var_indx]) > 1:
@@ -319,10 +341,34 @@ for child in root:
 				print("Variable: "+ frames.global_frame[to_var_indx][0] +" is empty")
 				exit(53) # Check correct exit code TODO
 		print() # TO BE DELETED, JUST FOR BETTER PRINTS
-	if instruction.name == 'JUMP':
+
+	elif instruction.name == 'CREATEFRAME':
+		frames.tmp_frame = []
+		print("I read createframe!")
+
+
+	elif instruction.name == 'PUSHFRAME':
+		if frames.tmp_frame != None:
+			frames.frame_stack.extend(frames.tmp_frame)
+			frames.tmp_frame = None
+		else:
+			print("Empty Temp frame.")
+			exit(53) # Check for correct exit code TODO
+
+		print("I read pushframe!")
+
+	elif instruction.name == 'POPFRAME':
+		frames.tmp_frame = frames.frame_stack[len(frames.frame_stack) - 1]
+		del frames.frame_stack[len(frames.frame_stack) - 1]
+		print("I read popframe!")
+
+	elif instruction.name == 'JUMP':
 		print("I read jump!")
 
 	# len(instruction.args), instruction.name
+	print("GLOBAL: ", frames.global_frame)
+	print("LOCAL: ", frames.frame_stack)
+	print("TEMP: ", frames.tmp_frame)
 	print("FUNCTIONS: read operands:", len(instruction.args), "\n")
 #		print(len(instruction.args))
 #
