@@ -154,6 +154,53 @@ def var_find_index(argument_num):
 		exit(54)
 	return frames.return_index(get_frame(0), instruction.args[argument_num].value)
 
+def var_find_type(frame, from_var_indx):
+	if frame == 'GF':
+		if len(frames.global_frame[from_var_indx]) > 1:
+			type = frames.global_frame[from_var_indx][1]
+		else:
+			print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
+			exit(54) # Check for correct exit code TODO
+	#elif frame == 'LF':
+
+	#else:
+
+	return type
+
+def var_find_value(frame, from_var_indx):
+	if frame == 'GF':
+		if len(frames.global_frame[from_var_indx]) > 1:
+			value = frames.global_frame[from_var_indx][2]
+		else:
+			print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
+			exit(54) # Check for correct exit code TODO
+
+	return value
+
+def insert_into_var(frame, to_var_indx, from_type, from_value):
+	if frame == 'GF':
+		if len(frames.global_frame[to_var_indx]) > 1:
+			frames.global_frame[to_var_indx][1] = from_type
+			frames.global_frame[to_var_indx][2] = from_value
+		else:
+			frames.global_frame[to_var_indx].append(from_type)
+			frames.global_frame[to_var_indx].append(from_value)
+
+	elif frame == 'LF':
+		if len(frames.frame_stack[len(frames.frame_stack)][to_var_indx]) > 1:
+			frames.frame_stack[len(frames.frame_stack)][to_var_indx][1] = from_type
+			frames.frame_stack[len(frames.frame_stack)][to_var_indx][2] = from_value
+		else:
+			frames.frame_stack[len(frames.frame_stack)][to_var_indx].append(from_type)
+			frames.frame_stack[len(frames.frame_stack)][to_var_indx].append(from_value)
+	else:
+		if len(frames.tmp_frame[to_var_indx]) > 1:
+			frames.tmp_frame[to_var_indx][1] = from_type
+			frames.tmp_frame[to_var_indx][2] = from_value
+		else:
+			frames.tmp_frame[to_var_indx].append(from_type)
+			frames.tmp_frame[to_var_indx].append(from_value)
+
 argp = argparse.ArgumentParser()
 argp.add_argument("--source", nargs= 1, type=argparse.FileType('r'), help= "TODO")
 argp.add_argument("--input", nargs= 1, help= "TODO")
@@ -241,37 +288,42 @@ for child in root:
 
 		frames.search_frame(get_frame(0), instruction.args[0].value)
 		frames.add_to_frame(get_frame(0), instruction.args[0].value)
-		print(frames.global_frame)
+		print("GLOBAL: ", frames.global_frame)
 
 	if instruction.name == 'MOVE':
-		#print(instruction.args[0].type, instruction.args[1].type)
+		frames.search_frame(get_frame(0), instruction.args[0].value)
 
-		in_var_indx = var_find_index(0)
-		if instruction.args[1].type != 'var': # check if second argument is variable or not !!!WARNING!!! not checking if variable has data, TODO
-			frames.global_frame[in_var_indx].append(instruction.args[1].type)
-			frames.global_frame[in_var_indx].append(instruction.args[1].value)
+		to_var_indx = var_find_index(0)
+		if instruction.args[1].type != 'var': # check if second argument is variable or not
+			insert_into_var(get_frame(0), to_var_indx, instruction.args[1].type, instruction.args[1].value)
 		else:
+			frames.search_frame(get_frame(1), instruction.args[1].value)
 			from_var_indx = var_find_index(1)
+			type = var_find_type(get_frame(1), from_var_indx)
+			value = var_find_value(get_frame(1), from_var_indx)
 
-			#check for more data, if data is present rewrite. TODO
-			frames.global_frame[in_var_indx].append(frames.global_frame[from_var_indx][1])
-			frames.global_frame[in_var_indx].append(frames.global_frame[from_var_indx][2])
+			insert_into_var(get_frame(0), to_var_indx, type, value)
 
-		print(frames.global_frame)
+		print("GLOBAL: ", frames.global_frame)
 		#print("I read move! and index is", frames.return_index(get_frame(0), instruction.args[0].value))
 
 	if instruction.name == 'ADD':
 		print("I read add!")
 
 	if instruction.name == 'WRITE':
-		print("I read write!")
-
+		to_var_indx = var_find_index(0)
+		if get_frame(0) == 'GF':
+			if len(frames.global_frame[to_var_indx]) > 1:
+				print(frames.global_frame[to_var_indx][2], end='')
+			else:
+				print("Variable: "+ frames.global_frame[to_var_indx][0] +" is empty")
+				exit(53) # Check correct exit code TODO
+		print() # TO BE DELETED, JUST FOR BETTER PRINTS
 	if instruction.name == 'JUMP':
 		print("I read jump!")
 
 	# len(instruction.args), instruction.name
-	print("FUNCTIONS: read operands:", len(instruction.args), "opcode", instruction.number, "\n")
-
+	print("FUNCTIONS: read operands:", len(instruction.args), "\n")
 #		print(len(instruction.args))
 #
 #		if re.match("arg1", arg.tag):
