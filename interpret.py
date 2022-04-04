@@ -118,10 +118,8 @@ class Frames:
 				exit(52) # Check for correct error TODO
 
 		elif f_type == "LF":
-			print(self.frame_stack[len(self.frame_stack) - 1][0])
 			for variable in range(len(self.frame_stack)):
-				print(variable)
-				if var_name == self.frame_stack[len(self.frame_stack) - 1][variable]:
+				if var_name == self.frame_stack[LF_len()][variable]:
 					var_counter += 1
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
@@ -144,18 +142,24 @@ class Frames:
 				exit(52) # Check for correct error TODO
 
 	def return_index(self, f_type, var_name):
+		index = 0
 		if f_type == "GF":
-			index = 0
 			for variable in range(len(self.global_frame)):
 				if var_name == self.global_frame[variable][0]:
 					return index
 				index += 1
 
-				# if f_type == "LF":
-					# for variable in self.frame_stack:
+		elif f_type == "LF":
+			for variable in range(len(self.frame_stack[len(self.frame_stack) - 1])):
+				if var_name == self.frame_stack[LF_len()][variable][0]:
+					return index
+				index += 1
 
-				# if f_type == "TF":
-					# for variable in self.tmp_frame:
+		elif f_type == "TF":
+			for variable in range(len(self.tmp_frame)):
+				if var_name == self.tmp_frame[variable][0]:
+					return index
+				index += 1
 
 class Argument:
 	def __init__(self, arg_type, value):
@@ -174,9 +178,31 @@ class Instruction:
 def get_frame(argument_num):
 	return instruction.args[argument_num].value.partition("@")[0]
 
+def LF_len():
+    return len(frames.frame_stack) - 1
+
+def to_LF():
+	for variable in frames.tmp_frame:
+		new_var = variable[0].partition("@")
+		new_var = list(new_var)
+		new_var[0] = 'LF'
+		new_var = "".join(new_var)
+
+		variable[0] = new_var
+
+def	to_TF():
+	for variable in frames.tmp_frame:
+		new_var = variable[0].partition("@")
+		new_var = list(new_var)
+		new_var[0] = 'TF'
+		new_var = "".join(new_var)
+
+		variable[0] = new_var
+
 def var_find_index(argument_num):
 	if frames.return_index(get_frame(0), instruction.args[argument_num].value) == None:
-		print("Non defined variable" + instruction.args[argument_num].value)
+		print("I killed it")
+		print("Non defined variable " + instruction.args[argument_num].value)
 		exit(54)
 	return frames.return_index(get_frame(0), instruction.args[argument_num].value)
 
@@ -184,24 +210,45 @@ def var_find_type(frame, from_var_indx):
 	if frame == 'GF':
 		if len(frames.global_frame[from_var_indx]) > 1:
 			type = frames.global_frame[from_var_indx][1]
+			return type
 		else:
 			print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
 			exit(54) # Check for correct exit code TODO
-	#elif frame == 'LF':
 
-	#else:
+	elif frame == 'LF':
+		if len(frames.frame_stack[LF_len()][from_var_indx]) > 1:
+			type = frames.global_frame[from_var_indx][1]
+			return type
+		else:
+			print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
+			exit(54) # Check for correct exit code TODO
 
-	return type
+	elif frame == 'TF':
+		if len(frames.tmp_frame[from_var_indx]) > 1:
+			type = frames.tmp_frame[from_var_indx][1]
+			return type
+		else:
+			print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.")
+			exit(54) # Check for correct exit code TODO
 
 def var_find_value(frame, from_var_indx):
 	if frame == 'GF':
 		if len(frames.global_frame[from_var_indx]) > 1:
 			value = frames.global_frame[from_var_indx][2]
+			return value
 		else:
 			print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
 			exit(54) # Check for correct exit code TODO
 
-	return value
+	# elif frame == 'LF':
+
+	elif frame == 'TF':
+		if len(frames.tmp_frame[from_var_indx]) > 1:
+			value = frames.tmp_frame[from_var_indx][2]
+			return value
+		else:
+			print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.")
+			exit(54) # Check for correct exit code TODO
 
 def insert_into_var(frame, to_var_indx, from_type, from_value):
 	if frame == 'GF':
@@ -214,12 +261,12 @@ def insert_into_var(frame, to_var_indx, from_type, from_value):
 
 	elif frame == 'LF':
 		if len(frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx]) > 1:
-			frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx][1] = from_type
-			frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx][2] = from_value
+			frames.frame_stack[LF_len()][to_var_indx][1] = from_type
+			frames.frame_stack[LF_len()][to_var_indx][2] = from_value
 		else:
-			frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx].append(from_type)
-			frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx].append(from_value)
-	else:
+			frames.frame_stack[LF_len()][to_var_indx].append(from_type)
+			frames.frame_stack[LF_len()][to_var_indx].append(from_value)
+	elif frame == 'TF':
 		if len(frames.tmp_frame[to_var_indx]) > 1:
 			frames.tmp_frame[to_var_indx][1] = from_type
 			frames.tmp_frame[to_var_indx][2] = from_value
@@ -278,18 +325,7 @@ for child in root:
 	flag_arg1 = False
 	flag_arg2 = False
 	for arg in child:
-		#print("ARG:", arg.tag, arg.items(), arg.get(key='type'), arg.text, "\n")
-
-		if re.match("arg1", arg.tag):
-			instruction.add_argument(arg.get(key='type'), arg.text)
-			flag_arg1 = True
-
-		elif re.match("arg2", arg.tag) and flag_arg1:
-			instruction.add_argument(arg.get(key='type'), arg.text)
-			flag_arg2 = True
-
-		elif re.match("arg3", arg.tag) and flag_arg2:
-			instruction.add_argument(arg.get(key='type'), arg.text)
+		instruction.add_argument(arg.get(key='type'), arg.text)
 
 	found_func = False
 	for func in Functions:
@@ -340,6 +376,21 @@ for child in root:
 			else:
 				print("Variable: "+ frames.global_frame[to_var_indx][0] +" is empty")
 				exit(53) # Check correct exit code TODO
+
+		elif get_frame(0) == 'LF':
+			if len(frames.frame_stack[LF_len()][to_var_indx]) > 1:
+				print(frames.frame_stack[LF_len()][to_var_indx][2], end='')
+			else:
+				print("Variable: "+ frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx][0] +" is empty")
+				exit(53) # Check correct exit code TODO
+
+		elif get_frame(0) == 'TF':
+			if len(frames.tmp_frame[to_var_indx]) > 1:
+				print(frames.tmp_frame[to_var_indx][2], end='')
+			else:
+				print("Variable: "+ frames.tmp_frame[to_var_indx][0] +" is empty")
+				exit(53) # Check correct exit code TODO
+
 		print() # TO BE DELETED, JUST FOR BETTER PRINTS
 
 	elif instruction.name == 'CREATEFRAME':
@@ -348,8 +399,9 @@ for child in root:
 
 
 	elif instruction.name == 'PUSHFRAME':
+		to_LF()
 		if frames.tmp_frame != None:
-			frames.frame_stack.extend(frames.tmp_frame)
+			frames.frame_stack.append(frames.tmp_frame)
 			frames.tmp_frame = None
 		else:
 			print("Empty Temp frame.")
@@ -358,8 +410,9 @@ for child in root:
 		print("I read pushframe!")
 
 	elif instruction.name == 'POPFRAME':
-		frames.tmp_frame = frames.frame_stack[len(frames.frame_stack) - 1]
-		del frames.frame_stack[len(frames.frame_stack) - 1]
+		frames.tmp_frame = frames.frame_stack[LF_len()]
+		to_TF()
+		del frames.frame_stack[LF_len()]
 		print("I read popframe!")
 
 	elif instruction.name == 'JUMP':
@@ -370,52 +423,3 @@ for child in root:
 	print("LOCAL: ", frames.frame_stack)
 	print("TEMP: ", frames.tmp_frame)
 	print("FUNCTIONS: read operands:", len(instruction.args), "\n")
-#		print(len(instruction.args))
-#
-#		if re.match("arg1", arg.tag):
-#			instruction.add_argument(arg.get(key='type'), arg.text)
-#			flag_arg1 = True
-#			print(len(instruction.args))
-#			continue
-#
-#		if flag_arg1 and re.match("arg2", arg.tag):
-#			instruction.add_argument(arg.get(key='type'), arg.text)
-#			flag_arg2 = True
-#			print(len(instruction.args))
-#			continue
-#
-#		if flag_arg1 and flag_arg2 and re.match("arg3", arg.tag):
-#			instruction.add_argument(arg.get(key='type'), arg.text)
-#		else:
-#			print("Error 32")
-#			exit(32)
-
-
-#for instruction in root:
-#	print(instruction.keys())
-#	print(instruction.items())
-#checks
-
-#if root.tag != 'program': # nvm, you MUST check for this, it's also correct, root.tag is program
-#	# shod
-#
-#for child in root:
-#	if child.tag != 'instruction': # 
-#		# shod
-#
-#	ca = list(child.attrib.keys()) # I need to check these
-#	if not('order')
-#		# shod
-#
-#	for subelem in child: # idk much about this but we'll see
-#		if not(re.match(r"arg[123]", subelem.tag)):
-#			#shod
-#
-## xml 2 instruction
-#for elem in root:
-#	#make instruction
-#	for sub in elem:
-#		instruction.add_argument(arg_type, value)
-#
-#for i in instructions:
-#	interpret(i)
