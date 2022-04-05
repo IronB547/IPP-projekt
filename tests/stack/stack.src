@@ -1,0 +1,22 @@
+.IPPcode22
+
+DEFVAR GF@abc
+MOVE GF@abc int@5
+
+CREATEFRAME
+
+DEFVAR TF@DEF
+MOVE TF@DEF bool@true
+
+PUSHFRAME
+CREATEFRAME
+
+DEFVAR TF@GHI
+MOVE TF@GHI string@hello
+
+
+PUSHS string@bumbum
+PUSHS GF@abc
+PUSHS LF@DEF
+PUSHS TF@GHI
+POPS GF@abc
