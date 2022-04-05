@@ -8,6 +8,6 @@ MOVE GF@abc bool@true
 MOVE GF@DEF bool@false
 MOVE GF@GHI bool@true
 
-AND GF@GHI GF@abc bool@true
+AND GF@GHI GF@abc int@5
 OR GF@DEF GF@abc GF@GHI
 NOT GF@abc GF@abc

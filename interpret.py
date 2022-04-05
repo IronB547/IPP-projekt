@@ -177,7 +177,7 @@ class Instruction:
 def get_frame(argument_num):
 	return instruction.args[argument_num].value.partition("@")[0]
 
-def check_var_type(arg_num):
+def check_type_var(arg_num):
 	if instruction.args[arg_num].type == 'var':
 		return True
 	else:
@@ -414,7 +414,7 @@ for child in root:
 
 	elif instruction.name == 'PUSHS':
 
-		if(check_var_type(0)):
+		if(check_type_var(0)):
 			var_indx = var_find_index(0)
 			val = find_var(get_frame(0), var_indx)
 			list = [val[1], val[2]]
@@ -433,63 +433,83 @@ for child in root:
 	elif instruction.name == 'ADD':
 		to_var_indx = var_find_index(0)
 
-		from_var1_indx = var_find_index(1)
-		val1 = arithm_oper(1, from_var1_indx)
+		if check_type_var(1):
+			from_var1_indx = var_find_index(1)
+			val1 = arithm_oper(1, from_var1_indx)
+		else:
+			val1 = instruction.args[1].value
 
-		from_var2_indx = var_find_index(2)
-		val2 = arithm_oper(2, from_var2_indx)
+		if check_type_var(2):
+			from_var2_indx = var_find_index(2)
+			val2 = arithm_oper(2, from_var2_indx)
+		else:
+			val2 = instruction.args[2].value
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) + int(val2))
 
 	elif instruction.name == 'SUB':
 		to_var_indx = var_find_index(0)
 
-		from_var1_indx = var_find_index(1)
-		val1 = arithm_oper(1, from_var1_indx)
+		if check_type_var(1):
+			from_var1_indx = var_find_index(1)
+			val1 = arithm_oper(1, from_var1_indx)
+		else:
+			val1 = instruction.args[1].value
 
-		from_var2_indx = var_find_index(2)
-		val2 = arithm_oper(2, from_var2_indx)
+		if check_type_var(2):
+			from_var2_indx = var_find_index(2)
+			val2 = arithm_oper(2, from_var2_indx)
+		else:
+			val2 = instruction.args[2].value
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) - int(val2))
 
 	elif instruction.name == 'MUL':
 		to_var_indx = var_find_index(0)
 
-		from_var1_indx = var_find_index(1)
-		val1 = arithm_oper(1, from_var1_indx)
+		if check_type_var(1):
+			from_var1_indx = var_find_index(1)
+			val1 = arithm_oper(1, from_var1_indx)
+		else:
+			val1 = instruction.args[1].value
 
-		from_var2_indx = var_find_index(2)
-		val2 = arithm_oper(2, from_var2_indx)
+		if check_type_var(2):
+			from_var2_indx = var_find_index(2)
+			val2 = arithm_oper(2, from_var2_indx)
+		else:
+			val2 = instruction.args[2].value
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) * int(val2))
 
 	elif instruction.name == 'IDIV':
 		to_var_indx = var_find_index(0)
 
-		from_var1_indx = var_find_index(1)
-		val1 = arithm_oper(1, from_var1_indx)
+		if check_type_var(1):
+			from_var1_indx = var_find_index(1)
+			val1 = arithm_oper(1, from_var1_indx)
+		else:
+			val1 = instruction.args[1].value
 
-		from_var2_indx = var_find_index(2)
-		val2 = arithm_oper(2, from_var2_indx)
+		if check_type_var(2):
+			from_var2_indx = var_find_index(2)
+			val2 = arithm_oper(2, from_var2_indx)
+		else:
+			val2 = instruction.args[2].value
 
-		if val2 == 0:
-			print("Division by 0")
-			exit(57)
-
-		insert_into_var(get_frame(0), to_var_indx, 'int', int(val2) // int(val1))
+		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) // int(val2))
 
 	elif instruction.name == 'AND':
 		to_var_indx = var_find_index(0)
 
-		if check_var_type(1):
+		if check_type_var(1):
 			from_var1_indx = var_find_index(1)
 			val1 = logic_oper(1, from_var1_indx)
 		else:
 			val1 = instruction.args[1].value
 
-		if check_var_type(2):
+		if check_type_var(2):
 			from_var2_indx = var_find_index(2)
-			val2 = arithm_oper(2, from_var2_indx)
+			val2 = logic_oper(2, from_var2_indx)
 		else:
 			val2 = instruction.args[2].value
 
@@ -498,9 +518,39 @@ for child in root:
 		else:
 			insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
 
-	#elif instruction.name == 'OR':
+	elif instruction.name == 'OR':
+		to_var_indx = var_find_index(0)
 
-	#elif instruction.name == 'NOT:
+		if check_type_var(1):
+			from_var1_indx = var_find_index(1)
+			val1 = logic_oper(1, from_var1_indx)
+		else:
+			val1 = instruction.args[1].value
+
+		if check_type_var(2):
+			from_var2_indx = var_find_index(2)
+			val2 = logic_oper(2, from_var2_indx)
+		else:
+			val2 = instruction.args[2].value
+
+		if val1 == 'false' and val2 == 'false':
+			insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
+		else:
+			insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
+
+	elif instruction.name == 'NOT':
+		to_var_indx = var_find_index(0)
+
+		if check_type_var(1):
+			from_var_indx = var_find_index(1)
+			val = logic_oper(1, from_var_indx)
+		else:
+			val = instruction.args[1].value
+
+		if val == 'true':
+			insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
+		else:
+			insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
 
 	elif instruction.name == 'JUMP':
 		print("I read jump!")

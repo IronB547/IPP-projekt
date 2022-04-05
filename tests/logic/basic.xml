@@ -24,7 +24,7 @@
 	<instruction order="7" opcode="AND">
 		<arg1 type="var">GF@GHI</arg1>
 		<arg2 type="var">GF@abc</arg2>
-		<arg3 type="bool">false</arg3>
+		<arg3 type="int">5</arg3>
 	</instruction>
 	<instruction order="8" opcode="OR">
 		<arg1 type="var">GF@DEF</arg1>
