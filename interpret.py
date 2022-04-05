@@ -1,5 +1,4 @@
 import argparse
-import re
 import xml.etree.ElementTree as ET
 from enum import Enum
 
@@ -45,37 +44,37 @@ CONST_FUNC =   [[1],  # DEFVAR
 				[3],  # ADD
 				[1],  # WRITE
 				[0],  # CREATEFRAME
-            	[0],  # PUSHFRAME
-                [0],  # POPFRAME
-                [1],  # CALL
-                [0],  # RETURN
-                [1],  # PUSHS
-                [1],  # POPS
-                [3],  # SUB
-                [3],  # MUL
-                [3],  # IDIV
-                [3],  # LT
-                [3],  # GT
-                [3],  # EQ
-                [3],  # AND
-                [3],  # OR
-                [2],  # NOT
-                [2],  # INT2CHAR
-                [3],  # STRI2INT
-                [2],  # READ
-                [1],  # WRITE
-                [3],  # CONCAT
-                [2],  # STRLEN
-                [3],  # GETCHAR
-                [3],  # SETCHAR
-                [2],  # TYPE
-                [1],  # LABEL
-                [1],  # JUMP
-                [3],  # JUMPIFEQ
-                [3],  # JUMPIFNEQ
-                [1],  # EXIT
-                [1],  # DPRINT
-                [0],  # BREA
+				[0],  # PUSHFRAME
+				[0],  # POPFRAME
+				[1],  # CALL
+				[0],  # RETURN
+				[1],  # PUSHS
+				[1],  # POPS
+				[3],  # SUB
+				[3],  # MUL
+				[3],  # IDIV
+				[3],  # LT
+				[3],  # GT
+				[3],  # EQ
+				[3],  # AND
+				[3],  # OR
+				[2],  # NOT
+				[2],  # INT2CHAR
+				[3],  # STRI2INT
+				[2],  # READ
+				[1],  # WRITE
+				[3],  # CONCAT
+				[2],  # STRLEN
+				[3],  # GETCHAR
+				[3],  # SETCHAR
+				[2],  # TYPE
+				[1],  # LABEL
+				[1],  # JUMP
+				[3],  # JUMPIFEQ
+				[3],  # JUMPIFNEQ
+				[1],  # EXIT
+				[1],  # DPRINT
+				[0],  # BREA
 				]
 class Frames:
 	def __init__(self):
@@ -160,7 +159,7 @@ class Frames:
 				if var_name == self.tmp_frame[variable][0]:
 					return index
 				index += 1
-
+		print(index)
 class Argument:
 	def __init__(self, arg_type, value):
 		self.type = arg_type
@@ -178,8 +177,14 @@ class Instruction:
 def get_frame(argument_num):
 	return instruction.args[argument_num].value.partition("@")[0]
 
+def check_var_type(arg_num):
+	if instruction.args[arg_num].type == 'var':
+		return True
+	else:
+		return False
+
 def LF_len():
-    return len(frames.frame_stack) - 1
+	return len(frames.frame_stack) - 1
 
 def to_LF():
 	for variable in frames.tmp_frame:
@@ -200,52 +205,30 @@ def	to_TF():
 		variable[0] = new_var
 
 def var_find_index(argument_num):
-	if frames.return_index(get_frame(0), instruction.args[argument_num].value) == None:
-		print("I killed it")
+	if frames.return_index(get_frame(argument_num), instruction.args[argument_num].value) == None:
 		print("Non defined variable " + instruction.args[argument_num].value)
 		exit(54)
-	return frames.return_index(get_frame(0), instruction.args[argument_num].value)
 
-def var_find_type(frame, from_var_indx):
+	return frames.return_index(get_frame(argument_num), instruction.args[argument_num].value)
+
+def find_var(frame, from_var_indx):
 	if frame == 'GF':
 		if len(frames.global_frame[from_var_indx]) > 1:
-			type = frames.global_frame[from_var_indx][1]
-			return type
+			return frames.global_frame[from_var_indx]
 		else:
 			print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
 			exit(54) # Check for correct exit code TODO
 
 	elif frame == 'LF':
 		if len(frames.frame_stack[LF_len()][from_var_indx]) > 1:
-			type = frames.global_frame[from_var_indx][1]
-			return type
+			return frames.frame_stack[LF_len()][from_var_indx]
 		else:
-			print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
+			print("Variable " + frames.frame_stack[LF_len()][from_var_indx][0] + " is empty.")
 			exit(54) # Check for correct exit code TODO
 
 	elif frame == 'TF':
 		if len(frames.tmp_frame[from_var_indx]) > 1:
-			type = frames.tmp_frame[from_var_indx][1]
-			return type
-		else:
-			print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.")
-			exit(54) # Check for correct exit code TODO
-
-def var_find_value(frame, from_var_indx):
-	if frame == 'GF':
-		if len(frames.global_frame[from_var_indx]) > 1:
-			value = frames.global_frame[from_var_indx][2]
-			return value
-		else:
-			print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
-			exit(54) # Check for correct exit code TODO
-
-	# elif frame == 'LF':
-
-	elif frame == 'TF':
-		if len(frames.tmp_frame[from_var_indx]) > 1:
-			value = frames.tmp_frame[from_var_indx][2]
-			return value
+			return frames.tmp_frame[from_var_indx]
 		else:
 			print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.")
 			exit(54) # Check for correct exit code TODO
@@ -273,6 +256,28 @@ def insert_into_var(frame, to_var_indx, from_type, from_value):
 		else:
 			frames.tmp_frame[to_var_indx].append(from_type)
 			frames.tmp_frame[to_var_indx].append(from_value)
+
+def arithm_oper(arg_num, from_var_indx):
+	val = None
+	val = find_var(get_frame(arg_num), from_var_indx)
+	if val[1] == 'int':
+		val = val[2]
+	else:
+		print("Incorrect type " + val[1])
+		exit(53)  # Check for correct exit code TODO
+
+	return val
+
+def logic_oper(arg_num, from_var_indx):
+	val = None
+	val = find_var(get_frame(arg_num), from_var_indx)
+	if val[1] == 'bool':
+		val = val[2]
+	else:
+		print("Incorrect type " + instruction.args[arg_num].type)
+		exit(53)  # Check for correct exit code TODO
+
+	return val
 
 argp = argparse.ArgumentParser()
 argp.add_argument("--source", nargs= 1, type=argparse.FileType('r'), help= "TODO")
@@ -360,13 +365,10 @@ for child in root:
 		else:
 			frames.search_frame(get_frame(1), instruction.args[1].value)
 			from_var_indx = var_find_index(1)
-			type = var_find_type(get_frame(1), from_var_indx)
-			value = var_find_value(get_frame(1), from_var_indx)
+			type = find_var(get_frame(1), from_var_indx)
+			value = find_var(get_frame(1), from_var_indx)
 
-			insert_into_var(get_frame(0), to_var_indx, type, value)
-
-	elif instruction.name == 'ADD':
-		print("I read add!")
+			insert_into_var(get_frame(0), to_var_indx, type[1], value[2])
 
 	elif instruction.name == 'WRITE':
 		to_var_indx = var_find_index(0)
@@ -395,8 +397,6 @@ for child in root:
 
 	elif instruction.name == 'CREATEFRAME':
 		frames.tmp_frame = []
-		print("I read createframe!")
-
 
 	elif instruction.name == 'PUSHFRAME':
 		to_LF()
@@ -407,13 +407,100 @@ for child in root:
 			print("Empty Temp frame.")
 			exit(53) # Check for correct exit code TODO
 
-		print("I read pushframe!")
-
 	elif instruction.name == 'POPFRAME':
 		frames.tmp_frame = frames.frame_stack[LF_len()]
 		to_TF()
 		del frames.frame_stack[LF_len()]
-		print("I read popframe!")
+
+	elif instruction.name == 'PUSHS':
+
+		if(check_var_type(0)):
+			var_indx = var_find_index(0)
+			val = find_var(get_frame(0), var_indx)
+			list = [val[1], val[2]]
+			frames.stack.append(list)
+			val.pop(2)
+			val.pop(1)
+
+		else:
+			frames.stack.append([instruction.args[0].type, instruction.args[0].value])
+
+	elif instruction.name == 'POPS':
+
+		insert_into_var(get_frame(0), var_find_index(0), frames.stack[len(frames.stack) - 1][0], frames.stack[len(frames.stack) - 1][1])
+		del frames.stack[len(frames.stack) - 1]
+
+	elif instruction.name == 'ADD':
+		to_var_indx = var_find_index(0)
+
+		from_var1_indx = var_find_index(1)
+		val1 = arithm_oper(1, from_var1_indx)
+
+		from_var2_indx = var_find_index(2)
+		val2 = arithm_oper(2, from_var2_indx)
+
+		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) + int(val2))
+
+	elif instruction.name == 'SUB':
+		to_var_indx = var_find_index(0)
+
+		from_var1_indx = var_find_index(1)
+		val1 = arithm_oper(1, from_var1_indx)
+
+		from_var2_indx = var_find_index(2)
+		val2 = arithm_oper(2, from_var2_indx)
+
+		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) - int(val2))
+
+	elif instruction.name == 'MUL':
+		to_var_indx = var_find_index(0)
+
+		from_var1_indx = var_find_index(1)
+		val1 = arithm_oper(1, from_var1_indx)
+
+		from_var2_indx = var_find_index(2)
+		val2 = arithm_oper(2, from_var2_indx)
+
+		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) * int(val2))
+
+	elif instruction.name == 'IDIV':
+		to_var_indx = var_find_index(0)
+
+		from_var1_indx = var_find_index(1)
+		val1 = arithm_oper(1, from_var1_indx)
+
+		from_var2_indx = var_find_index(2)
+		val2 = arithm_oper(2, from_var2_indx)
+
+		if val2 == 0:
+			print("Division by 0")
+			exit(57)
+
+		insert_into_var(get_frame(0), to_var_indx, 'int', int(val2) // int(val1))
+
+	elif instruction.name == 'AND':
+		to_var_indx = var_find_index(0)
+
+		if check_var_type(1):
+			from_var1_indx = var_find_index(1)
+			val1 = logic_oper(1, from_var1_indx)
+		else:
+			val1 = instruction.args[1].value
+
+		if check_var_type(2):
+			from_var2_indx = var_find_index(2)
+			val2 = arithm_oper(2, from_var2_indx)
+		else:
+			val2 = instruction.args[2].value
+
+		if val1 == 'true' and val2 == 'true':
+			insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
+		else:
+			insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
+
+	#elif instruction.name == 'OR':
+
+	#elif instruction.name == 'NOT:
 
 	elif instruction.name == 'JUMP':
 		print("I read jump!")
@@ -422,4 +509,5 @@ for child in root:
 	print("GLOBAL: ", frames.global_frame)
 	print("LOCAL: ", frames.frame_stack)
 	print("TEMP: ", frames.tmp_frame)
+	print("STACK:", frames.stack)
 	print("FUNCTIONS: read operands:", len(instruction.args), "\n")
