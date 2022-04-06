@@ -1,0 +1,20 @@
+.IPPcode22
+
+DEFVAR GF@abc
+DEFVAR GF@DEF
+DEFVAR GF@GHI
+
+MOVE GF@abc bool@true
+MOVE GF@DEF bool@false
+
+LT GF@GHI GF@DEF GF@abc
+
+MOVE GF@abc int@5
+MOVE GF@DEF int@3
+
+LT GF@GHI GF@DEF GF@abc
+
+MOVE GF@abc string@abcd
+MOVE GF@DEF string@abcdg
+
+LT GF@GHI GF@DEF GF@abc

@@ -1,3 +1,8 @@
+# Principy programovacích jazyků a OOP (IPP)
+# Interpret.py
+# Author: Tomáš Dvořák 
+# Login: xdvora3r
+
 import argparse
 import xml.etree.ElementTree as ET
 from enum import Enum
@@ -279,6 +284,37 @@ def logic_oper(arg_num, from_var_indx):
 
 	return val
 
+def get_val(arg_num):
+	if check_type_var(arg_num):
+		from_var_indx = var_find_index(arg_num)
+		val = find_var(get_frame(arg_num), from_var_indx)
+		val = val[2]
+	else:
+		val = instruction.args[arg_num].value
+
+	return val
+
+def get_type(arg_num):
+	if check_type_var(arg_num):
+		from_var_indx = var_find_index(arg_num)
+		type = find_var(get_frame(arg_num), from_var_indx)
+		type = type[1]
+	else:
+		type = instruction.args[arg_num].type
+
+	return type
+
+def check_same_type(type1, type2):
+	if type1 == 'int' and type2 == 'int':
+		return 'int'
+	elif type1 == 'bool' and type2 == 'bool':
+		return 'bool'
+	elif type1 == 'string' and type2 == 'string':
+		return 'string'
+	else:
+		print("Not same types")
+		exit(53) # Check correct exit code TODO
+
 argp = argparse.ArgumentParser()
 argp.add_argument("--source", nargs= 1, type=argparse.FileType('r'), help= "TODO")
 argp.add_argument("--input", nargs= 1, help= "TODO")
@@ -551,6 +587,81 @@ for child in root:
 			insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
 		else:
 			insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
+
+	elif instruction.name == 'LT':
+		to_var_indx = var_find_index(0)
+
+		val1 = get_val(1)
+		type1 = get_type(1)
+
+		val2 = get_val(2)
+		type2 = get_type(2)
+
+		type = check_same_type(type1, type2)
+
+		if type == 'int':
+			insert_into_var(get_frame(0), to_var_indx, type1, int(val1) < int(val2))
+		elif type == 'bool':
+			if val1 == 'false' and val2 == 'false':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+			elif val1 == 'false' and val2 == 'true':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'true')
+			elif val1 == 'true' and val2 == 'false':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+			elif val1 == 'true' and val2 == 'true':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+		elif type == 'string':
+			insert_into_var(get_frame(0), to_var_indx, type1, val1 < val2)
+
+	elif instruction.name == 'GT':
+		to_var_indx = var_find_index(0)
+
+		val1 = get_val(1)
+		type1 = get_type(1)
+
+		val2 = get_val(2)
+		type2 = get_type(2)
+
+		type = check_same_type(type1, type2)
+
+		if type == 'int':
+			insert_into_var(get_frame(0), to_var_indx, type1, int(val1) > int(val2))
+		elif type == 'bool':
+			if val1 == 'false' and val2 == 'false':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+			elif val1 == 'false' and val2 == 'true':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+			elif val1 == 'true' and val2 == 'false':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'true')
+			elif val1 == 'true' and val2 == 'true':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+		elif type == 'string':
+			insert_into_var(get_frame(0), to_var_indx, type1, val1 > val2)
+
+	elif instruction.name == 'EQ':
+		to_var_indx = var_find_index(0)
+
+		val1 = get_val(1)
+		type1 = get_type(1)
+
+		val2 = get_val(2)
+		type2 = get_type(2)
+
+		type = check_same_type(type1, type2)
+
+		if type == 'int':
+			insert_into_var(get_frame(0), to_var_indx, type1, int(val1) == int(val2))
+		elif type == 'bool':
+			if val1 == 'false' and val2 == 'false':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'true')
+			elif val1 == 'false' and val2 == 'true':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+			elif val1 == 'true' and val2 == 'false':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+			elif val1 == 'true' and val2 == 'true':
+				insert_into_var(get_frame(0), to_var_indx, type1, 'true')
+		elif type == 'string':
+			insert_into_var(get_frame(0), to_var_indx, type1, val1 == val2)
 
 	elif instruction.name == 'JUMP':
 		print("I read jump!")
