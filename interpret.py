@@ -6,6 +6,8 @@
 import argparse
 import xml.etree.ElementTree as ET
 from enum import Enum
+from ast import literal_eval
+
 
 class Functions(Enum):
 	DEFVAR = 0
@@ -44,7 +46,8 @@ class Functions(Enum):
 	DPRINT = 34
 	BREAK = 35
 
-CONST_FUNC =   [[1],  # DEFVAR
+
+CONST_FUNC = [[1],  # DEFVAR
 				[2],  # MOVE
 				[3],  # ADD
 				[1],  # WRITE
@@ -81,12 +84,15 @@ CONST_FUNC =   [[1],  # DEFVAR
 				[1],  # DPRINT
 				[0],  # BREA
 				]
+
+
 class Frames:
 	def __init__(self):
 		self.global_frame = []
 		self.tmp_frame = None
 		self.frame_stack = []
 		self.stack = []
+
 	def add_to_frame(self, f_type, var_name):
 		if f_type == "GF":
 			self.global_frame.append([var_name])
@@ -99,7 +105,7 @@ class Frames:
 			self.frame_stack[len(self.frame_stack) - 1].append([var_name])
 
 		if f_type == "TF":
-			if self.tmp_frame == None:
+			if self.tmp_frame is None:
 				print("No TF created")
 				exit(55)
 
@@ -109,17 +115,15 @@ class Frames:
 		var_counter = 0
 		if f_type == "GF":
 			for variable in range(len(self.global_frame)):
-				#print(self.global_frame[variable][0], var_name)
 				if var_name == self.global_frame[variable][0]:
 					var_counter += 1
-					#print(var_counter)
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
 				print("Redeclaration of variable: " + var_name)
-				exit(52) # Check for correct error TODO
+				exit(52)  # Check for correct error TODO
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
 				print("Variable " + var_name + " doesn't exist.")
-				exit(52) # Check for correct error TODO
+				exit(52)  # Check for correct error TODO
 
 		elif f_type == "LF":
 			for variable in range(len(self.frame_stack)):
@@ -128,10 +132,10 @@ class Frames:
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
 				print("Redeclaration of variable: " + var_name)
-				exit(52) # Check for correct error TODO
+				exit(52)  # Check for correct error TODO
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
 				print("Variable " + var_name + " doesn't exist.")
-				exit(52) # Check for correct error TODO
+				exit(52)  # Check for correct error TODO
 
 		elif f_type == "TF":
 			for variable in range(len(self.tmp_frame)):
@@ -140,10 +144,10 @@ class Frames:
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
 				print("Redeclaration of variable: " + var_name)
-				exit(52) # Check for correct error TODO
+				exit(52)  # Check for correct error TODO
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
 				print("Variable " + var_name + " doesn't exist.")
-				exit(52) # Check for correct error TODO
+				exit(52)  # Check for correct error TODO
 
 	def return_index(self, f_type, var_name):
 		index = 0
@@ -165,22 +169,28 @@ class Frames:
 					return index
 				index += 1
 		print(index)
+
+
 class Argument:
 	def __init__(self, arg_type, value):
 		self.type = arg_type
 		self.value = value
+
 
 class Instruction:
 	def __init__(self, name, number):
 		self.name = name
 		self.number = number
 		self.args = []
+
 	def add_argument(self, arg_type, value):
 		self.args.append(Argument(arg_type, value))
 		# argparse
 
+
 def get_frame(argument_num):
 	return instruction.args[argument_num].value.partition("@")[0]
+
 
 def check_type_var(arg_num):
 	if instruction.args[arg_num].type == 'var':
@@ -188,19 +198,23 @@ def check_type_var(arg_num):
 	else:
 		return False
 
+
 def LF_len():
 	return len(frames.frame_stack) - 1
+
 
 def to_LF():
 	for variable in frames.tmp_frame:
 		new_var = variable[0].partition("@")
+
 		new_var = list(new_var)
 		new_var[0] = 'LF'
 		new_var = "".join(new_var)
 
 		variable[0] = new_var
 
-def	to_TF():
+
+def to_TF():
 	for variable in frames.tmp_frame:
 		new_var = variable[0].partition("@")
 		new_var = list(new_var)
@@ -209,12 +223,14 @@ def	to_TF():
 
 		variable[0] = new_var
 
+
 def var_find_index(argument_num):
-	if frames.return_index(get_frame(argument_num), instruction.args[argument_num].value) == None:
+	if frames.return_index(get_frame(argument_num), instruction.args[argument_num].value) is None:
 		print("Non defined variable " + instruction.args[argument_num].value)
 		exit(54)
 
 	return frames.return_index(get_frame(argument_num), instruction.args[argument_num].value)
+
 
 def find_var(frame, from_var_indx):
 	if frame == 'GF':
@@ -222,21 +238,22 @@ def find_var(frame, from_var_indx):
 			return frames.global_frame[from_var_indx]
 		else:
 			print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
-			exit(54) # Check for correct exit code TODO
+			exit(54)  # Check for correct exit code TODO
 
 	elif frame == 'LF':
 		if len(frames.frame_stack[LF_len()][from_var_indx]) > 1:
 			return frames.frame_stack[LF_len()][from_var_indx]
 		else:
 			print("Variable " + frames.frame_stack[LF_len()][from_var_indx][0] + " is empty.")
-			exit(54) # Check for correct exit code TODO
+			exit(54)  # Check for correct exit code TODO
 
 	elif frame == 'TF':
 		if len(frames.tmp_frame[from_var_indx]) > 1:
 			return frames.tmp_frame[from_var_indx]
 		else:
 			print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.")
-			exit(54) # Check for correct exit code TODO
+			exit(54)  # Check for correct exit code TODO
+
 
 def insert_into_var(frame, to_var_indx, from_type, from_value):
 	if frame == 'GF':
@@ -262,8 +279,8 @@ def insert_into_var(frame, to_var_indx, from_type, from_value):
 			frames.tmp_frame[to_var_indx].append(from_type)
 			frames.tmp_frame[to_var_indx].append(from_value)
 
+
 def arithm_oper(arg_num, from_var_indx):
-	val = None
 	val = find_var(get_frame(arg_num), from_var_indx)
 	if val[1] == 'int':
 		val = val[2]
@@ -273,8 +290,8 @@ def arithm_oper(arg_num, from_var_indx):
 
 	return val
 
+
 def logic_oper(arg_num, from_var_indx):
-	val = None
 	val = find_var(get_frame(arg_num), from_var_indx)
 	if val[1] == 'bool':
 		val = val[2]
@@ -283,6 +300,7 @@ def logic_oper(arg_num, from_var_indx):
 		exit(53)  # Check for correct exit code TODO
 
 	return val
+
 
 def get_val(arg_num):
 	if check_type_var(arg_num):
@@ -294,15 +312,17 @@ def get_val(arg_num):
 
 	return val
 
+
 def get_type(arg_num):
 	if check_type_var(arg_num):
 		from_var_indx = var_find_index(arg_num)
-		type = find_var(get_frame(arg_num), from_var_indx)
-		type = type[1]
+		val_type = find_var(get_frame(arg_num), from_var_indx)
+		val_type = val_type[1]
 	else:
-		type = instruction.args[arg_num].type
+		val_type = instruction.args[arg_num].type
 
-	return type
+	return val_type
+
 
 def check_same_type(type1, type2):
 	if type1 == 'int' and type2 == 'int':
@@ -311,13 +331,16 @@ def check_same_type(type1, type2):
 		return 'bool'
 	elif type1 == 'string' and type2 == 'string':
 		return 'string'
+	elif type1 == 'nil' and type2 == 'nil':
+		return 'nil'
 	else:
 		print("Not same types")
-		exit(53) # Check correct exit code TODO
+		exit(53)  # Check correct exit code TODO
+
 
 argp = argparse.ArgumentParser()
-argp.add_argument("--source", nargs= 1, type=argparse.FileType('r'), help= "TODO")
-argp.add_argument("--input", nargs= 1, help= "TODO")
+argp.add_argument("--source", nargs=1, type=argparse.FileType('r'), help="TODO")
+argp.add_argument("--input", nargs=1, help="TODO")
 
 args = argp.parse_args()
 
@@ -325,24 +348,24 @@ try:
 	tree = ET.parse(args.source[0])
 except:
 	print("Error 31")
-	exit (31)
+	exit(31)
 
 # load xml
 root = tree.getroot()
 
 if root.tag != "program" or root.get(key='language') != "IPPcode22":
 	print("Error 32")
-	exit (32)
+	exit(32)
 
-#print("ROOT:", root.tag, root.items(), root.get(key=
+# print("ROOT:", root.tag, root.items(), root.get(key=
 frames = Frames()
 first_iter = True
 for child in root:
 	if child.tag != 'instruction':
 		print("Error 32")
-		exit (32)
+		exit(32)
 
-	if first_iter == True:
+	if first_iter is True:
 		if int(child.get(key='order')) == 1:
 			op_num = int(child.get(key='order'))
 		else:
@@ -353,7 +376,7 @@ for child in root:
 		print("Error 32")
 		exit(32)
 
-	if op_num != int(child.get(key='order')) - 1 and first_iter == False:
+	if op_num != int(child.get(key='order')) - 1 and first_iter is False:
 		print("Error 32")
 		exit(32)
 
@@ -377,9 +400,9 @@ for child in root:
 				print("Error 32")
 				exit(32)
 			break
-	#print("\n",instruction.name)
+	# print("\n",instruction.name)
 
-	if found_func == False:
+	if found_func is False:
 		print("Error 32")
 		exit(32)
 
@@ -392,19 +415,56 @@ for child in root:
 		frames.search_frame(get_frame(0), instruction.args[0].value)
 		frames.add_to_frame(get_frame(0), instruction.args[0].value)
 
-	elif instruction.name == 'MOVE':
+	elif instruction.name == 'MOVE':  # Move is supposed to COPY from var to var TODO
 		frames.search_frame(get_frame(0), instruction.args[0].value)
 
 		to_var_indx = var_find_index(0)
-		if instruction.args[1].type != 'var': # check if second argument is variable or not
+		if instruction.args[1].type != 'var':  # check if second argument is variable or not
 			insert_into_var(get_frame(0), to_var_indx, instruction.args[1].type, instruction.args[1].value)
 		else:
 			frames.search_frame(get_frame(1), instruction.args[1].value)
 			from_var_indx = var_find_index(1)
-			type = find_var(get_frame(1), from_var_indx)
+			val_type = find_var(get_frame(1), from_var_indx)
 			value = find_var(get_frame(1), from_var_indx)
 
 			insert_into_var(get_frame(0), to_var_indx, type[1], value[2])
+
+	elif instruction.name == 'READ':
+		to_var_indx = var_find_index(0)
+
+		inp = input()
+
+		val_type = get_val(1)
+		print(inp.lower())
+
+		if val_type != 'int':
+
+			if val_type != 'bool':
+				if val_type != 'string':
+					input_type = 'nil'
+				else:
+					input_type = 'string'
+			else:
+				input_type = 'bool'
+		else:
+			try:
+				int(inp)
+			except ValueError:
+				input_type = 'nil'
+			else:
+				input_type = 'int'
+
+		if input_type == 'bool':
+			if inp.lower() == 'true':
+				insert_into_var(get_frame(0), to_var_indx, input_type, 'true')
+			else:
+				insert_into_var(get_frame(0), to_var_indx, input_type, 'false')
+		elif input_type == 'nil':
+			insert_into_var(get_frame(0), to_var_indx, input_type, 'nil')
+		else:
+			insert_into_var(get_frame(0), to_var_indx, input_type, inp)
+
+		#print(typ, type(inp), type(eval('1')))
 
 	elif instruction.name == 'WRITE':
 		to_var_indx = var_find_index(0)
@@ -412,36 +472,36 @@ for child in root:
 			if len(frames.global_frame[to_var_indx]) > 1:
 				print(frames.global_frame[to_var_indx][2], end='')
 			else:
-				print("Variable: "+ frames.global_frame[to_var_indx][0] +" is empty")
-				exit(53) # Check correct exit code TODO
+				print("Variable: " + frames.global_frame[to_var_indx][0] + " is empty")
+				exit(53)  # Check correct exit code TODO
 
 		elif get_frame(0) == 'LF':
 			if len(frames.frame_stack[LF_len()][to_var_indx]) > 1:
 				print(frames.frame_stack[LF_len()][to_var_indx][2], end='')
 			else:
-				print("Variable: "+ frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx][0] +" is empty")
-				exit(53) # Check correct exit code TODO
+				print("Variable: " + frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx][0] + " is empty")
+				exit(53)  # Check correct exit code TODO
 
 		elif get_frame(0) == 'TF':
 			if len(frames.tmp_frame[to_var_indx]) > 1:
 				print(frames.tmp_frame[to_var_indx][2], end='')
 			else:
-				print("Variable: "+ frames.tmp_frame[to_var_indx][0] +" is empty")
-				exit(53) # Check correct exit code TODO
+				print("Variable: " + frames.tmp_frame[to_var_indx][0] + " is empty")
+				exit(53)  # Check correct exit code TODO
 
-		print() # TO BE DELETED, JUST FOR BETTER PRINTS
+		print()  # TO BE DELETED, JUST FOR BETTER PRINTS
 
 	elif instruction.name == 'CREATEFRAME':
 		frames.tmp_frame = []
 
 	elif instruction.name == 'PUSHFRAME':
 		to_LF()
-		if frames.tmp_frame != None:
+		if frames.tmp_frame is not None:
 			frames.frame_stack.append(frames.tmp_frame)
 			frames.tmp_frame = None
 		else:
 			print("Empty Temp frame.")
-			exit(53) # Check for correct exit code TODO
+			exit(53)  # Check for correct exit code TODO
 
 	elif instruction.name == 'POPFRAME':
 		frames.tmp_frame = frames.frame_stack[LF_len()]
@@ -450,11 +510,11 @@ for child in root:
 
 	elif instruction.name == 'PUSHS':
 
-		if(check_type_var(0)):
+		if check_type_var(0):
 			var_indx = var_find_index(0)
 			val = find_var(get_frame(0), var_indx)
-			list = [val[1], val[2]]
-			frames.stack.append(list)
+			stack_list = [val[1], val[2]]
+			frames.stack.append(stack_list)
 			val.pop(2)
 			val.pop(1)
 
@@ -463,7 +523,12 @@ for child in root:
 
 	elif instruction.name == 'POPS':
 
-		insert_into_var(get_frame(0), var_find_index(0), frames.stack[len(frames.stack) - 1][0], frames.stack[len(frames.stack) - 1][1])
+		insert_into_var(
+			get_frame(0),
+			var_find_index(0),
+			frames.stack[len(frames.stack) - 1][0],
+			frames.stack[len(frames.stack) - 1][1]
+		)
 		del frames.stack[len(frames.stack) - 1]
 
 	elif instruction.name == 'ADD':
@@ -537,17 +602,9 @@ for child in root:
 	elif instruction.name == 'AND':
 		to_var_indx = var_find_index(0)
 
-		if check_type_var(1):
-			from_var1_indx = var_find_index(1)
-			val1 = logic_oper(1, from_var1_indx)
-		else:
-			val1 = instruction.args[1].value
+		val1 = get_val(1)
 
-		if check_type_var(2):
-			from_var2_indx = var_find_index(2)
-			val2 = logic_oper(2, from_var2_indx)
-		else:
-			val2 = instruction.args[2].value
+		val2 = get_val(2)
 
 		if val1 == 'true' and val2 == 'true':
 			insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
@@ -557,17 +614,9 @@ for child in root:
 	elif instruction.name == 'OR':
 		to_var_indx = var_find_index(0)
 
-		if check_type_var(1):
-			from_var1_indx = var_find_index(1)
-			val1 = logic_oper(1, from_var1_indx)
-		else:
-			val1 = instruction.args[1].value
+		val1 = get_val(1)
 
-		if check_type_var(2):
-			from_var2_indx = var_find_index(2)
-			val2 = logic_oper(2, from_var2_indx)
-		else:
-			val2 = instruction.args[2].value
+		val2 = get_val(2)
 
 		if val1 == 'false' and val2 == 'false':
 			insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
@@ -577,11 +626,7 @@ for child in root:
 	elif instruction.name == 'NOT':
 		to_var_indx = var_find_index(0)
 
-		if check_type_var(1):
-			from_var_indx = var_find_index(1)
-			val = logic_oper(1, from_var_indx)
-		else:
-			val = instruction.args[1].value
+		val = get_val(1)
 
 		if val == 'true':
 			insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
@@ -597,7 +642,7 @@ for child in root:
 		val2 = get_val(2)
 		type2 = get_type(2)
 
-		type = check_same_type(type1, type2)
+		val_type = check_same_type(type1, type2)
 
 		if type == 'int':
 			insert_into_var(get_frame(0), to_var_indx, type1, int(val1) < int(val2))
@@ -622,7 +667,7 @@ for child in root:
 		val2 = get_val(2)
 		type2 = get_type(2)
 
-		type = check_same_type(type1, type2)
+		val_type = check_same_type(type1, type2)
 
 		if type == 'int':
 			insert_into_var(get_frame(0), to_var_indx, type1, int(val1) > int(val2))
@@ -647,7 +692,7 @@ for child in root:
 		val2 = get_val(2)
 		type2 = get_type(2)
 
-		type = check_same_type(type1, type2)
+		val_type = check_same_type(type1, type2)
 
 		if type == 'int':
 			insert_into_var(get_frame(0), to_var_indx, type1, int(val1) == int(val2))
@@ -662,6 +707,36 @@ for child in root:
 				insert_into_var(get_frame(0), to_var_indx, type1, 'true')
 		elif type == 'string':
 			insert_into_var(get_frame(0), to_var_indx, type1, val1 == val2)
+
+	elif instruction.name == 'INT2CHAR':
+		to_var_indx = var_find_index(0)
+
+		val = get_val(1)
+
+		try:
+			chr(int(val))
+		except:
+			print("Incorrect Unicode value")
+			exit(58)
+		else:
+			insert_into_var(get_frame(0), to_var_indx, 'string', chr(int(val)))
+
+	elif instruction.name == 'STRI2INT':
+		to_var_indx = var_find_index(0)
+
+		val1 = get_val(1)
+		val2 = get_val(2)
+
+		try:
+			ord(val1[int(val2)])
+		except IndexError:
+			print("Index out of range")
+			exit(58)
+		except:
+			print("Incorrect Unicode value")
+			exit(58)
+		else:
+			insert_into_var(get_frame(0), to_var_indx, 'int', ord(val1[int(val2)]))
 
 	elif instruction.name == 'JUMP':
 		print("I read jump!")

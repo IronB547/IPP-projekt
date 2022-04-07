@@ -19,7 +19,7 @@ function header_error() { # Incorrect header.
 
 function incorrect_function_error() { # Incorrect function name.
 	ob_end_clean(); # This will silence the already "generated" XML code.
-	echo "Error 22\n";
+	#echo "Error 22\n";
 	exit(22);
 }
 
@@ -341,25 +341,18 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 
 		case 'READ':
 			check_ops($cut, 2);
-			$value = htmlspecialchars($cut[2]);
-			$value = explode('@', $value);
 
 			print_instruction($instruction, $cut);
 
 			var_only($cut);
 
 			# Same with determine_val, but the arg type is 'type'.
+			echo $cut[2];
 			if(preg_match("~\bint\b~", $cut[2])) 
-				if(preg_match('/^(\+|-|)(0[xX][0-9a-fA-F]+|0b[0-1]+|(0[oO]|0)[0-7]+\b|[0-9]+)\b/', $value[1]))
-					echo("\t\t<arg2 type=\"type\">$cut[2]</arg2>")."\n";
-				else
-					other_error();
+				echo("\t\t<arg2 type=\"type\">$cut[2]</arg2>")."\n";
 
 			else if(preg_match("~\bbool\b~", $cut[2]))
-				if(str_contains($value[1], "true") || str_contains($value[1], "false")) # Only true/false is accepted.
-					echo("\t\t<arg2 type=\"type\">$cut[2]</arg2>")."\n";
-				else
-					other_error();
+				echo("\t\t<arg2 type=\"type\">$cut[2]</arg2>")."\n";
 
 			else if(preg_match("~\bstring\b~", $cut[2]))
 				echo("\t\t<arg2 type=\"type\">$cut[2]</arg2>")."\n";

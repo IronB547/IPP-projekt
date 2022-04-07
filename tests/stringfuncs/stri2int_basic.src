@@ -1,0 +1,12 @@
+.IPPcode22
+
+DEFVAR GF@abc
+DEFVAR GF@DEF
+DEFVAR GF@GHI
+
+STRI2INT GF@abc string@Loremipsum int@3
+
+MOVE GF@DEF string@hello
+MOVE GF@GHI int@2
+
+STRI2INT GF@DEF GF@DEF GF@GHI

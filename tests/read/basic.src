@@ -1,0 +1,11 @@
+.IPPcode22
+
+DEFVAR GF@abc
+DEFVAR GF@DEF
+DEFVAR GF@GHI
+
+READ GF@abc int
+
+READ GF@DEF string
+
+READ GF@GHI bool
