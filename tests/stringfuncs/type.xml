@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="IPPcode22">
+	<instruction order="1" opcode="DEFVAR">
+		<arg1 type="var">GF@abc</arg1>
+	</instruction>
+	<instruction order="2" opcode="DEFVAR">
+		<arg1 type="var">GF@empty</arg1>
+	</instruction>
+	<instruction order="3" opcode="DEFVAR">
+		<arg1 type="var">GF@DEF</arg1>
+	</instruction>
+	<instruction order="4" opcode="DEFVAR">
+		<arg1 type="var">GF@GHI</arg1>
+	</instruction>
+	<instruction order="5" opcode="MOVE">
+		<arg1 type="var">GF@DEF</arg1>
+		<arg2 type="string">hello</arg2>
+	</instruction>
+	<instruction order="6" opcode="MOVE">
+		<arg1 type="var">GF@GHI</arg1>
+		<arg2 type="nil">nil</arg2>
+	</instruction>
+	<instruction order="7" opcode="TYPE">
+		<arg1 type="var">GF@abc</arg1>
+		<arg2 type="int">50</arg2>
+	</instruction>
+	<instruction order="8" opcode="TYPE">
+		<arg1 type="var">GF@abc</arg1>
+		<arg2 type="var">GF@DEF</arg2>
+	</instruction>
+	<instruction order="9" opcode="TYPE">
+		<arg1 type="var">GF@abc</arg1>
+		<arg2 type="var">GF@GHI</arg2>
+	</instruction>
+	<instruction order="10" opcode="MOVE">
+		<arg1 type="var">GF@GHI</arg1>
+		<arg2 type="bool">false</arg2>
+	</instruction>
+	<instruction order="11" opcode="TYPE">
+		<arg1 type="var">GF@abc</arg1>
+		<arg2 type="var">GF@GHI</arg2>
+	</instruction>
+	<instruction order="12" opcode="TYPE">
+		<arg1 type="var">GF@abc</arg1>
+		<arg2 type="var">GF@empty</arg2>
+	</instruction>
+</program>

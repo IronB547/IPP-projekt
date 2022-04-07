@@ -237,22 +237,34 @@ def find_var(frame, from_var_indx):
 		if len(frames.global_frame[from_var_indx]) > 1:
 			return frames.global_frame[from_var_indx]
 		else:
-			print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
-			exit(54)  # Check for correct exit code TODO
+			if instruction.name == 'TYPE':
+				insert_into_var('GF', from_var_indx, 'string', '')
+				return frames.global_frame[from_var_indx]
+			else:
+				print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
+				exit(54)  # Check for correct exit code TODO
 
 	elif frame == 'LF':
 		if len(frames.frame_stack[LF_len()][from_var_indx]) > 1:
 			return frames.frame_stack[LF_len()][from_var_indx]
 		else:
-			print("Variable " + frames.frame_stack[LF_len()][from_var_indx][0] + " is empty.")
-			exit(54)  # Check for correct exit code TODO
+			if instruction.name == 'TYPE':
+				insert_into_var('LF', from_var_indx, 'string', '')
+				return frames.global_frame[from_var_indx]
+			else:
+				print("Variable " + frames.frame_stack[LF_len()][from_var_indx][0] + " is empty.")
+				exit(54)  # Check for correct exit code TODO
 
 	elif frame == 'TF':
 		if len(frames.tmp_frame[from_var_indx]) > 1:
 			return frames.tmp_frame[from_var_indx]
 		else:
-			print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.")
-			exit(54)  # Check for correct exit code TODO
+			if instruction.name == 'TYPE':
+				insert_into_var('TF', from_var_indx, 'string', '')
+				return frames.global_frame[from_var_indx]
+			else:
+				print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.")
+				exit(54)  # Check for correct exit code TODO
 
 
 def insert_into_var(frame, to_var_indx, from_type, from_value):
@@ -737,6 +749,101 @@ for child in root:
 			exit(58)
 		else:
 			insert_into_var(get_frame(0), to_var_indx, 'int', ord(val1[int(val2)]))
+
+	elif instruction.name == 'CONCAT':
+		to_var_indx = var_find_index(0)
+
+		val1 = get_val(1)
+		val2 = get_val(2)
+
+		if get_type(1) != 'string' or get_type(2) != 'string':
+			print("Incorrect data type")
+			exit(53)  # Check correct exit code TODO
+
+		string = val1 + val2
+
+		insert_into_var(get_frame(0), to_var_indx, 'string', string)
+
+	elif instruction.name == 'STRLEN':
+		to_var_indx = var_find_index(0)
+
+		val1 = get_val(1)
+		type1 = get_type(1)
+
+		if type1 != 'string':
+			print("Incorrect data type")
+			exit(53)  # Check for correct exit code TODO
+
+		val1 = len(val1)
+
+		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1))
+
+	elif instruction.name == 'GETCHAR':
+		to_var_indx = var_find_index(0)
+
+		val1 = get_val(1)
+		type1 = get_type(1)
+
+		if type1 != 'string':
+			print("Incorrect data type")
+			exit(53)  # Check for correct exit code TODO
+
+		val2 = get_val(2)
+		type2 = get_type(2)
+
+		if type2 != 'int':
+			print("Incorrect data type")
+			exit(53)  # Check for correct exit code TODO
+
+		try:
+			val1[int(val2)]
+		except IndexError:
+			print("Index out of range")
+			exit(58)
+		else:
+			pass
+
+		insert_into_var(get_frame(0), to_var_indx, 'int', val1[int(val2)])
+
+	elif instruction.name == 'SETCHAR':
+		to_var_indx = var_find_index(0)
+		val0 = get_val(0)
+		type0 = get_type(0)
+
+		val1 = get_val(1)
+		type1 = get_type(1)
+		if type1 != 'int':
+			print("Incorrect data type")
+			exit(53)  # Check for correct exit code TODO
+
+		val2 = get_val(2)
+		if val2 == '':
+			print("Empty variable")
+			exit(58)
+
+		type2 = get_type(2)
+
+		if type0 != 'string' or type2 != 'string':
+			print("Incorrect data type")
+			exit(53)  # Check for correct exit code TODO
+
+		try:
+			val0[int(val1)]
+		except IndexError:
+			print("Index out of range")
+			exit(58)
+		else:
+			pass
+
+		val0 = val0[:int(val1)] + val2[0] + val0[int(val1)+1:]
+		insert_into_var(get_frame(0), to_var_indx, 'string', val0)
+
+	elif instruction.name == 'TYPE':
+		to_var_indx = var_find_index(0)
+
+		type1 = get_type(1)
+
+		insert_into_var(get_frame(0), to_var_indx, 'string', type1)
 
 	elif instruction.name == 'JUMP':
 		print("I read jump!")
