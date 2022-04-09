@@ -7,6 +7,7 @@ import argparse
 import xml.etree.ElementTree as ET
 from enum import Enum
 from ast import literal_eval
+import warnings
 
 
 class Functions(Enum):
@@ -92,6 +93,29 @@ class Frames:
 		self.tmp_frame = None
 		self.frame_stack = []
 		self.stack = []
+		self.call_stack = []
+		self.labels = []
+		self.jump = None
+
+	def add_to_labels(self, label_name, index):
+		self.labels.append([label_name, index])
+
+	def seach_labels(self, label_name):
+		check = 0
+		found = False
+		index = -1
+
+		for name in self.labels:
+			if label_name == name[0]:
+				check += 1
+				found = True
+			index += 1
+		if found is True and check == 1:
+			return self.labels[index]
+		elif check > 1:
+			print("Same label name " + label_name)
+			exit(53)  # Check correct exit code TODO
+
 
 	def add_to_frame(self, f_type, var_name):
 		if f_type == "GF":
@@ -356,10 +380,11 @@ argp.add_argument("--input", nargs=1, help="TODO")
 
 args = argp.parse_args()
 
+
 try:
 	tree = ET.parse(args.source[0])
-except:
-	print("Error 31")
+except TypeError:
+	print("File is not well formed")
 	exit(31)
 
 # load xml
@@ -369,38 +394,21 @@ if root.tag != "program" or root.get(key='language') != "IPPcode22":
 	print("Error 32")
 	exit(32)
 
-# print("ROOT:", root.tag, root.items(), root.get(key=
 frames = Frames()
 first_iter = True
-for child in root:
-	if child.tag != 'instruction':
-		print("Error 32")
-		exit(32)
 
-	if first_iter is True:
-		if int(child.get(key='order')) == 1:
-			op_num = int(child.get(key='order'))
-		else:
-			print("Error 32")
-			exit(32)
+i = 0
+warnings.filterwarnings("ignore")
+child = root.getchildren()
 
-	if int(op_num) < 1:
-		print("Error 32")
-		exit(32)
+while i < len(root):
 
-	if op_num != int(child.get(key='order')) - 1 and first_iter is False:
-		print("Error 32")
-		exit(32)
-
-	op_num = int(child.get(key='order'))
-	first_iter = False
-
-	print("CHILD:", child.get(key='order'), child.get(key='opcode'), child.tag, child.items())
-	instruction = Instruction(name=child.get(key='opcode'), number=child.get(key='order'))
+	print("CHILD:", child[i].get(key='order'), child[i].get(key='opcode'), child[i].tag, child[i].items())
+	instruction = Instruction(name=child[i].get(key='opcode'), number=child[i].get(key='order'))
 
 	flag_arg1 = False
 	flag_arg2 = False
-	for arg in child:
+	for arg in child[i]:
 		instruction.add_argument(arg.get(key='type'), arg.text)
 
 	found_func = False
@@ -845,12 +853,39 @@ for child in root:
 
 		insert_into_var(get_frame(0), to_var_indx, 'string', type1)
 
+	elif instruction.name == 'LABEL':
+		frames.add_to_labels(instruction.args[0].value, i)
+
 	elif instruction.name == 'JUMP':
-		print("I read jump!")
+
+		label = frames.seach_labels(instruction.args[0].value)
+		frames.jump = instruction.args[0].value
+
+		if label is not None:
+			while i > int(label[1]):
+				print(i)
+				i -= 1
+			frames.jump = None
+		else:
+			while i <= len(root):
+				i += 1
+				if child[i].getchildren()[0].text == instruction.args[0].value:
+					frames.jump = None
+					break
+
+	i += 1
 
 	# len(instruction.args), instruction.name
 	print("GLOBAL: ", frames.global_frame)
 	print("LOCAL: ", frames.frame_stack)
 	print("TEMP: ", frames.tmp_frame)
 	print("STACK:", frames.stack)
+	print("LABELS:", frames.labels)
+	print("JUMPS:", frames.jump)
 	print("FUNCTIONS: read operands:", len(instruction.args), "\n")
+
+
+
+if frames.jump is not None:
+	print("No label " + frames.jump + " found")
+	exit(53)  # Check correct error code TODO
