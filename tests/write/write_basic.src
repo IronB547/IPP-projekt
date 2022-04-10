@@ -1,0 +1,7 @@
+.IPPcode22
+
+DEFVAR GF@abc
+
+MOVE GF@abc int@5
+
+WRITE GF@abc

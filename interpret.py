@@ -48,7 +48,7 @@ class Functions(Enum):
 	BREAK = 35
 
 
-CONST_FUNC = [[1],  # DEFVAR
+CONST_FUNC = 	[[1],  # DEFVAR
 				[2],  # MOVE
 				[3],  # ADD
 				[1],  # WRITE
@@ -114,7 +114,7 @@ class Frames:
 			return self.labels[index]
 		elif check > 1:
 			print("Same label name " + label_name)
-			exit(53)  # Check correct exit code TODO
+			exit(52)
 
 
 	def add_to_frame(self, f_type, var_name):
@@ -144,10 +144,10 @@ class Frames:
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
 				print("Redeclaration of variable: " + var_name)
-				exit(52)  # Check for correct error TODO
+				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
 				print("Variable " + var_name + " doesn't exist.")
-				exit(52)  # Check for correct error TODO
+				exit(54)
 
 		elif f_type == "LF":
 			for variable in range(len(self.frame_stack)):
@@ -156,10 +156,10 @@ class Frames:
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
 				print("Redeclaration of variable: " + var_name)
-				exit(52)  # Check for correct error TODO
+				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
 				print("Variable " + var_name + " doesn't exist.")
-				exit(52)  # Check for correct error TODO
+				exit(54)
 
 		elif f_type == "TF":
 			for variable in range(len(self.tmp_frame)):
@@ -168,10 +168,10 @@ class Frames:
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
 				print("Redeclaration of variable: " + var_name)
-				exit(52)  # Check for correct error TODO
+				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
 				print("Variable " + var_name + " doesn't exist.")
-				exit(52)  # Check for correct error TODO
+				exit(54)
 
 	def return_index(self, f_type, var_name):
 		index = 0
@@ -209,7 +209,6 @@ class Instruction:
 
 	def add_argument(self, arg_type, value):
 		self.args.append(Argument(arg_type, value))
-		# argparse
 
 
 def get_frame(argument_num):
@@ -266,7 +265,7 @@ def find_var(frame, from_var_indx):
 				return frames.global_frame[from_var_indx]
 			else:
 				print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
-				exit(54)  # Check for correct exit code TODO
+				exit(56)
 
 	elif frame == 'LF':
 		if len(frames.frame_stack[LF_len()][from_var_indx]) > 1:
@@ -277,7 +276,7 @@ def find_var(frame, from_var_indx):
 				return frames.global_frame[from_var_indx]
 			else:
 				print("Variable " + frames.frame_stack[LF_len()][from_var_indx][0] + " is empty.")
-				exit(54)  # Check for correct exit code TODO
+				exit(56)
 
 	elif frame == 'TF':
 		if len(frames.tmp_frame[from_var_indx]) > 1:
@@ -288,7 +287,7 @@ def find_var(frame, from_var_indx):
 				return frames.global_frame[from_var_indx]
 			else:
 				print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.")
-				exit(54)  # Check for correct exit code TODO
+				exit(56)
 
 
 def insert_into_var(frame, to_var_indx, from_type, from_value):
@@ -322,7 +321,7 @@ def arithm_oper(arg_num, from_var_indx):
 		val = val[2]
 	else:
 		print("Incorrect type " + val[1])
-		exit(53)  # Check for correct exit code TODO
+		exit(53)
 
 	return val
 
@@ -333,7 +332,7 @@ def logic_oper(arg_num, from_var_indx):
 		val = val[2]
 	else:
 		print("Incorrect type " + instruction.args[arg_num].type)
-		exit(53)  # Check for correct exit code TODO
+		exit(53)
 
 	return val
 
@@ -420,7 +419,6 @@ while i < len(root):
 				print("Error 32")
 				exit(32)
 			break
-	# print("\n",instruction.name)
 
 	if found_func is False:
 		print("Error 32")
@@ -452,7 +450,7 @@ while i < len(root):
 	elif instruction.name == 'READ':
 		to_var_indx = var_find_index(0)
 
-		inp = input()
+		inp = input()  # Can also work from --input TODO
 
 		val_type = get_val(1)
 		print(inp.lower())
@@ -484,31 +482,10 @@ while i < len(root):
 		else:
 			insert_into_var(get_frame(0), to_var_indx, input_type, inp)
 
-
 	elif instruction.name == 'WRITE':
 		to_var_indx = var_find_index(0)
-		if get_frame(0) == 'GF':
-			if len(frames.global_frame[to_var_indx]) > 1:
-				print(frames.global_frame[to_var_indx][2], end='')
-			else:
-				print("Variable: " + frames.global_frame[to_var_indx][0] + " is empty")
-				exit(53)  # Check correct exit code TODO
-
-		elif get_frame(0) == 'LF':
-			if len(frames.frame_stack[LF_len()][to_var_indx]) > 1:
-				print(frames.frame_stack[LF_len()][to_var_indx][2], end='')
-			else:
-				print("Variable: " + frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx][0] + " is empty")
-				exit(53)  # Check correct exit code TODO
-
-		elif get_frame(0) == 'TF':
-			if len(frames.tmp_frame[to_var_indx]) > 1:
-				print(frames.tmp_frame[to_var_indx][2], end='')
-			else:
-				print("Variable: " + frames.tmp_frame[to_var_indx][0] + " is empty")
-				exit(53)  # Check correct exit code TODO
-
-		print()  # TO BE DELETED, JUST FOR BETTER PRINTS
+		print(get_val(0), end='')
+		print()
 
 	elif instruction.name == 'LABEL':
 		frames.add_to_labels(instruction.args[0].value, i)
@@ -594,7 +571,7 @@ while i < len(root):
 
 		if len(frames.call_stack) < 1:
 			print("Callstack is empty")
-			exit(56)  # Check correct exit code TODO
+			exit(56)
 		else:
 			i = frames.call_stack[len(frames.call_stack) - 1]
 			frames.call_stack.pop(len(frames.call_stack) - 1)
@@ -609,7 +586,7 @@ while i < len(root):
 			frames.tmp_frame = None
 		else:
 			print("Empty Temp frame.")
-			exit(53)  # Check for correct exit code TODO
+			exit(55)
 
 	elif instruction.name == 'POPFRAME':
 		frames.tmp_frame = frames.frame_stack[LF_len()]
@@ -854,7 +831,7 @@ while i < len(root):
 
 		if get_type(1) != 'string' or get_type(2) != 'string':
 			print("Incorrect data type")
-			exit(53)  # Check correct exit code TODO
+			exit(53)
 
 		string = val1 + val2
 
@@ -868,7 +845,7 @@ while i < len(root):
 
 		if type1 != 'string':
 			print("Incorrect data type")
-			exit(53)  # Check for correct exit code TODO
+			exit(53)
 
 		val1 = len(val1)
 
@@ -882,14 +859,14 @@ while i < len(root):
 
 		if type1 != 'string':
 			print("Incorrect data type")
-			exit(53)  # Check for correct exit code TODO
+			exit(53)
 
 		val2 = get_val(2)
 		type2 = get_type(2)
 
 		if type2 != 'int':
 			print("Incorrect data type")
-			exit(53)  # Check for correct exit code TODO
+			exit(53)
 
 		try:
 			val1[int(val2)]
@@ -910,7 +887,7 @@ while i < len(root):
 		type1 = get_type(1)
 		if type1 != 'int':
 			print("Incorrect data type")
-			exit(53)  # Check for correct exit code TODO
+			exit(53)
 
 		val2 = get_val(2)
 		if val2 == '':
@@ -921,7 +898,7 @@ while i < len(root):
 
 		if type0 != 'string' or type2 != 'string':
 			print("Incorrect data type")
-			exit(53)  # Check for correct exit code TODO
+			exit(53)
 
 		try:
 			val0[int(val1)]
@@ -972,7 +949,6 @@ while i < len(root):
 
 	i += 1
 
-	# len(instruction.args), instruction.name
 	print("GLOBAL: ", frames.global_frame, file=sys.stderr)
 	print("LOCAL: ", frames.frame_stack, file=sys.stderr)
 	print("TEMP: ", frames.tmp_frame, file=sys.stderr)
@@ -983,4 +959,4 @@ while i < len(root):
 
 if frames.jump is not None:
 	print("No label " + frames.jump + " found")
-	exit(53)  # Check correct error code TODO
+	exit(52)
