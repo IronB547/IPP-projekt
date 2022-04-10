@@ -116,7 +116,6 @@ class Frames:
 			print("Same label name " + label_name)
 			exit(52)
 
-
 	def add_to_frame(self, f_type, var_name):
 		if f_type == "GF":
 			self.global_frame.append([var_name])
@@ -396,6 +395,13 @@ if root.tag != "program" or root.get(key='language') != "IPPcode22":
 frames = Frames()
 first_iter = True
 
+
+for child in root:
+	edit = list(child.items()[1])
+	edit[1] = edit[1].upper()
+	child.set('opcode', edit[1])
+	root[:] = sorted(root, key=lambda child: int(child.get(key='order')))
+
 i = 0
 warnings.filterwarnings("ignore")
 child = root.getchildren()
@@ -483,9 +489,8 @@ while i < len(root):
 			insert_into_var(get_frame(0), to_var_indx, input_type, inp)
 
 	elif instruction.name == 'WRITE':
-		to_var_indx = var_find_index(0)
 		print(get_val(0), end='')
-		print()
+		print()  # TODO TO BE DELETED
 
 	elif instruction.name == 'LABEL':
 		frames.add_to_labels(instruction.args[0].value, i)
@@ -955,7 +960,7 @@ while i < len(root):
 	print("STACK:", frames.stack, file=sys.stderr)
 	print("LABELS:", frames.labels, file=sys.stderr)
 	print("CALL_STACK:", frames.call_stack, file=sys.stderr)
-	print("FUNCTIONS: read operands:", len(instruction.args), "\n")
+	print("FUNCTIONS: read operands:", len(instruction.args), "\n", file=sys.stderr)
 
 if frames.jump is not None:
 	print("No label " + frames.jump + " found")
