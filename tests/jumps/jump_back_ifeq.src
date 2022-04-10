@@ -1,0 +1,14 @@
+.IPPcode22
+
+DEFVAR GF@abc
+DEFVAR GF@DEF
+
+MOVE GF@abc int@0
+
+LABEL add
+
+ADD GF@abc GF@abc int@1
+
+JUMPIFEQ add GF@abc int@1
+
+DEFVAR GF@GOOD

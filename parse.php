@@ -304,7 +304,10 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 			print_instruction($instruction, $cut);
 			$value = get_val($cut, 1);
 
-			if(preg_match("~\bint\b~", $cut[1])) # Can only be int or bool
+			if(preg_match("/(GF|LF|TF)@[a-zA-Z#$&*_%!?][a-zA-Z#$&*_%!?0-9]*/", $cut[1]))
+				echo("\t\t<arg1 type=\"var\">$cut[1]</arg1>")."\n";
+
+			else if(preg_match("~\bint\b~", $cut[1])) # Can only be int or bool
 				if (preg_match('/^([0-9]+)\b/', $value))
 					echo("\t\t<arg1 type=\"int\">$value</arg1>")."\n";
 				else

@@ -1,0 +1,15 @@
+.IPPcode22
+
+DEFVAR GF@abc
+DEFVAR GF@DEF
+
+MOVE GF@DEF bool@true
+MOVE GF@abc bool@false
+
+JUMPIFNEQ nodefvar GF@abc GF@DEF
+
+DEFVAR GF@BAD
+
+LABEL nodefvar
+
+DEFVAR GF@GOOD

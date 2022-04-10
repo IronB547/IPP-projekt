@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="IPPcode22">
+	<instruction order="1" opcode="DEFVAR">
+		<arg1 type="var">GF@abc</arg1>
+	</instruction>
+	<instruction order="2" opcode="JUMP">
+		<arg1 type="label">skip</arg1>
+	</instruction>
+	<instruction order="3" opcode="LABEL">
+		<arg1 type="label">a</arg1>
+	</instruction>
+	<instruction order="4" opcode="DEFVAR">
+		<arg1 type="var">GF@BAD</arg1>
+	</instruction>
+	<instruction order="5" opcode="LABEL">
+		<arg1 type="label">b</arg1>
+	</instruction>
+	<instruction order="6" opcode="DEFVAR">
+		<arg1 type="var">GF@BAD</arg1>
+	</instruction>
+	<instruction order="7" opcode="LABEL">
+		<arg1 type="label">c</arg1>
+	</instruction>
+	<instruction order="8" opcode="DEFVAR">
+		<arg1 type="var">GF@BAD</arg1>
+	</instruction>
+	<instruction order="9" opcode="LABEL">
+		<arg1 type="label">d</arg1>
+	</instruction>
+	<instruction order="10" opcode="DEFVAR">
+		<arg1 type="var">GF@BAD</arg1>
+	</instruction>
+	<instruction order="11" opcode="LABEL">
+		<arg1 type="label">e</arg1>
+	</instruction>
+	<instruction order="12" opcode="DEFVAR">
+		<arg1 type="var">GF@BAD</arg1>
+	</instruction>
+	<instruction order="13" opcode="LABEL">
+		<arg1 type="label">skip</arg1>
+	</instruction>
+	<instruction order="14" opcode="DEFVAR">
+		<arg1 type="var">GF@GOOD</arg1>
+	</instruction>
+</program>

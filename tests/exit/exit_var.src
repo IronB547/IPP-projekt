@@ -1,0 +1,9 @@
+.IPPcode22
+
+DEFVAR GF@abc
+
+MOVE GF@abc int@20
+
+EXIT GF@abc
+
+MOVE GF@abc string@ignoredtext

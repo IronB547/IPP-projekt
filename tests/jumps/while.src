@@ -1,0 +1,13 @@
+.IPPcode22
+
+DEFVAR GF@abc
+DEFVAR GF@DEF
+
+MOVE GF@abc int@0
+MOVE GF@DEF int@5
+
+LABEL while
+
+ADD GF@abc GF@abc int@1
+
+JUMPIFNEQ while GF@abc GF@DEF

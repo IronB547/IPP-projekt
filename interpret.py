@@ -6,7 +6,7 @@
 import argparse
 import xml.etree.ElementTree as ET
 from enum import Enum
-from ast import literal_eval
+import sys
 import warnings
 
 
@@ -83,7 +83,7 @@ CONST_FUNC = [[1],  # DEFVAR
 				[3],  # JUMPIFNEQ
 				[1],  # EXIT
 				[1],  # DPRINT
-				[0],  # BREA
+				[0],  # BREAK
 				]
 
 
@@ -371,7 +371,7 @@ def check_same_type(type1, type2):
 		return 'nil'
 	else:
 		print("Not same types")
-		exit(53)  # Check correct exit code TODO
+		exit(53)
 
 
 argp = argparse.ArgumentParser()
@@ -484,7 +484,6 @@ while i < len(root):
 		else:
 			insert_into_var(get_frame(0), to_var_indx, input_type, inp)
 
-		#print(typ, type(inp), type(eval('1')))
 
 	elif instruction.name == 'WRITE':
 		to_var_indx = var_find_index(0)
@@ -510,6 +509,95 @@ while i < len(root):
 				exit(53)  # Check correct exit code TODO
 
 		print()  # TO BE DELETED, JUST FOR BETTER PRINTS
+
+	elif instruction.name == 'LABEL':
+		frames.add_to_labels(instruction.args[0].value, i)
+
+	elif instruction.name == 'JUMP':
+		label = frames.seach_labels(instruction.args[0].value)
+		frames.jump = instruction.args[0].value
+
+		if label is not None:
+			if i > int(label[1]):
+				i = int(label[1])
+			frames.jump = None
+		else:
+			while i <= len(root):
+				i += 1
+				if child[i].get(key='opcode') != 'LABEL':
+					continue
+				if child[i].getchildren()[0].text == frames.jump:
+					frames.jump = None
+					break
+
+	elif instruction.name == 'JUMPIFEQ':
+		label = frames.seach_labels(instruction.args[0].value)
+		check_same_type(get_type(1), get_type(2))
+
+		val1 = get_val(1)
+		val2 = get_val(2)
+		if label is not None and val1 == val2:
+			frames.jump = instruction.args[0].value
+			if i > int(label[1]):
+				i = int(label[1])
+			frames.jump = None
+		elif val1 == val2:
+			frames.jump = instruction.args[0].value
+			while i <= len(root):
+				i += 1
+				if child[i].get(key='opcode') != 'LABEL':
+					continue
+				if child[i].getchildren()[0].text == frames.jump:
+					frames.jump = None
+					break
+
+	elif instruction.name == 'JUMPIFNEQ':
+		label = frames.seach_labels(instruction.args[0].value)
+		check_same_type(get_type(1), get_type(2))
+
+		val1 = get_val(1)
+		val2 = get_val(2)
+		if label is not None and val1 != val2:
+			frames.jump = instruction.args[0].value
+			if i > int(label[1]):
+				i = int(label[1])
+			frames.jump = None
+		elif val1 != val2:
+			frames.jump = instruction.args[0].value
+			while i <= len(root):
+				i += 1
+				if child[i].get(key='opcode') != 'LABEL':
+					continue
+				if child[i].getchildren()[0].text == frames.jump:
+					frames.jump = None
+					break
+
+	elif instruction.name == 'CALL':
+		label = frames.seach_labels(instruction.args[0].value)
+		frames.jump = instruction.args[0].value
+		frames.call_stack.append(i)
+
+		if label is not None:
+			if i > int(label[1]):
+				i -= int(label[1])
+			frames.jump = None
+		else:
+			while i <= len(root):
+				i += 1
+				if child[i].get(key='opcode') != 'LABEL':
+					continue
+				if child[i].getchildren()[0].text == frames.jump:
+					frames.jump = None
+					break
+
+	elif instruction.name == 'RETURN':
+
+		if len(frames.call_stack) < 1:
+			print("Callstack is empty")
+			exit(56)  # Check correct exit code TODO
+		else:
+			i = frames.call_stack[len(frames.call_stack) - 1]
+			frames.call_stack.pop(len(frames.call_stack) - 1)
 
 	elif instruction.name == 'CREATEFRAME':
 		frames.tmp_frame = []
@@ -566,7 +654,7 @@ while i < len(root):
 		else:
 			val2 = instruction.args[2].value
 
-		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) + int(val2))
+		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) + int(val2)))
 
 	elif instruction.name == 'SUB':
 		to_var_indx = var_find_index(0)
@@ -583,7 +671,7 @@ while i < len(root):
 		else:
 			val2 = instruction.args[2].value
 
-		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) - int(val2))
+		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) - int(val2)))
 
 	elif instruction.name == 'MUL':
 		to_var_indx = var_find_index(0)
@@ -600,7 +688,7 @@ while i < len(root):
 		else:
 			val2 = instruction.args[2].value
 
-		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) * int(val2))
+		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) * int(val2)))
 
 	elif instruction.name == 'IDIV':
 		to_var_indx = var_find_index(0)
@@ -617,7 +705,7 @@ while i < len(root):
 		else:
 			val2 = instruction.args[2].value
 
-		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1) // int(val2))
+		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) // int(val2)))
 
 	elif instruction.name == 'AND':
 		to_var_indx = var_find_index(0)
@@ -853,38 +941,45 @@ while i < len(root):
 
 		insert_into_var(get_frame(0), to_var_indx, 'string', type1)
 
-	elif instruction.name == 'LABEL':
-		frames.add_to_labels(instruction.args[0].value, i)
+	elif instruction.name == 'EXIT':
+		val = get_val(0)
 
-	elif instruction.name == 'JUMP':
-
-		label = frames.seach_labels(instruction.args[0].value)
-		frames.jump = instruction.args[0].value
-
-		if label is not None:
-			while i > int(label[1]):
-				print(i)
-				i -= 1
-			frames.jump = None
+		try:
+			int(val)
+		except ValueError:
+			print("Invalid exit code " + val)
+			exit(57)
 		else:
-			while i <= len(root):
-				i += 1
-				if child[i].getchildren()[0].text == instruction.args[0].value:
-					frames.jump = None
-					break
+			if int(val) > 50 or int(val) < 0:
+				print("Invalid exit code " + val)
+				exit(57)
+
+			exit(int(val))
+			break
+
+	elif instruction.name == 'DPRINT':
+		val = get_val(0)
+		print(val, file=sys.stderr)
+
+	elif instruction.name == 'BREAK':
+		print("FUNCTION ORDER:", child[i].get(key='order'), file=sys.stderr)
+		print("GLOBAL: ", frames.global_frame, file=sys.stderr)
+		print("LOCAL: ", frames.frame_stack, file=sys.stderr)
+		print("TEMP: ", frames.tmp_frame, file=sys.stderr)
+		print("STACK:", frames.stack, file=sys.stderr)
+		print("LABELS:", frames.labels, file=sys.stderr)
+		print("CALL_STACK:", frames.call_stack, file=sys.stderr)
 
 	i += 1
 
 	# len(instruction.args), instruction.name
-	print("GLOBAL: ", frames.global_frame)
-	print("LOCAL: ", frames.frame_stack)
-	print("TEMP: ", frames.tmp_frame)
-	print("STACK:", frames.stack)
-	print("LABELS:", frames.labels)
-	print("JUMPS:", frames.jump)
+	print("GLOBAL: ", frames.global_frame, file=sys.stderr)
+	print("LOCAL: ", frames.frame_stack, file=sys.stderr)
+	print("TEMP: ", frames.tmp_frame, file=sys.stderr)
+	print("STACK:", frames.stack, file=sys.stderr)
+	print("LABELS:", frames.labels, file=sys.stderr)
+	print("CALL_STACK:", frames.call_stack, file=sys.stderr)
 	print("FUNCTIONS: read operands:", len(instruction.args), "\n")
-
-
 
 if frames.jump is not None:
 	print("No label " + frames.jump + " found")
