@@ -1,34 +1,24 @@
-[ipp-2022-tests/interpret-only/31/fucked_up_xml] Return code expected: 31. But got: 1
-[ipp-2022-tests/interpret-only/jumps/duplicateLabel] Return code expected: 52. But got: 0
-[ipp-2022-tests/interpret-only/jumps/jumpForward] Return code expected: 0
-. But got: 54
-[ipp-2022-tests/interpret-only/jumps/jumpifeq] DIFF: 2
-[ipp-2022-tests/interpret-only/jumps/nonexistLabel] Return code expected: 52. But got: 1
-[ipp-2022-tests/interpret-only/valid/all_program_attributes] Return code expected: 0. But got: 54
-[ipp-2022-tests/interpret-only/valid/defvar_move] Return code expected: 0. But got: 54
-[ipp-2022-tests/interpret-only/valid/dprint] DIFF: 2
-[ipp-2022-tests/interpret-only/valid/label_call_return] Return code expected: 0. But got: 1
-[ipp-2022-tests/interpret-only/valid/order/discontinuously_ordered_instructions] Return code expected: 0. But got: 54
-[ipp-2022-tests/interpret-only/valid/order/unordered_instructions] Return code expected: 0. But got: 54
-[ipp-2022-tests/interpret-only/valid/read] DIFF: 2
-[ipp-2022-tests/interpret-only/valid/type] DIFF: 2
-[ipp-2022-tests/interpret-only/xml_structure/arg_order1] Return code expected: 0. But got: 54
-[ipp-2022-tests/interpret-only/xml_structure/duplicate_order] Return code expected: 32
-. But got: 0
-[ipp-2022-tests/interpret-only/xml_structure/instruction_order1] Return code expected: 0. But got: 54
-[ipp-2022-tests/interpret-only/xml_structure/negative_order] Return code expected: 32. But got: 0
-[ipp-2022-tests/interpret-only/xml_structure/space_order] DIFF: 2
-[ipp-2022-tests/interpret-only/xml_structure/wrong_tag1] Return code expected: 32. But got: 0
-[ipp-2022-tests/interpret-only/xml_structure/wrong_tag2] Return code expected: 32. But got: 0
-[ipp-2022-tests/interpret-only/xml_structure/xml_format1] Return code expected: 31. But got: 1
-[ipp-2022-tests/interpret-only/xml_structure/xml_fromat2] Return code expected: 31. But got: 1
-[ipp-2022-tests/interpret-only/xml_structure/zero_order] Return code expected: 32. But got: 0
+
 --Summary--
 Passed 8/53 tests
 
-[ipp-2022-tests/interpret-only/arithmetic/correct] DIFF: 2
-[ipp-2022-tests/interpret-only/arithmetic/negativeNum] DIFF: 2
-[ipp-2022-tests/interpret-only/frames/secondLF] DIFF: 2
+!!!!!!!!!!!BIG ERROR MOVE NOT COPYING!!!!!!!!!!!!
+BIG ERROR interpret not reading escaped sequences
+[ipp-2022-tests/interpret-only/jumps/jumpForward] DIFF: 2
+
+BIG ERROR interpret not reading input correctly
+[ipp-2022-tests/interpret-only/valid/read] DIFF: 2
+
+[ipp-2022-tests/interpret-only/jumps/nonexistLabel] Return code expected: 52. But got: 1 FIXED?
+[ipp-2022-tests/interpret-only/valid/label_call_return] Return code expected: 0 FIXED?
+[ipp-2022-tests/interpret-only/valid/type] DIFF: 2 FIXED
+
+
+--Summary--
+Passed 48/53 tests
+
+--Summary--
+Passed 48/53 tests
 
 
 [ipp-2022-tests/interpret-only/valid/write] Return code expected: 0. But got: 54 DONE
@@ -50,3 +40,18 @@ Passed 8/53 tests
 [ipp-2022-tests/interpret-only/frames/popEmpty] Return code expected: 55. But got: 1 DONE
 [ipp-2022-tests/interpret-only/frames/pushEmpty] Return code expected: 55. But got: 1 DONE
 [ipp-2022-tests/interpret-only/frames/TFafterPush] Return code expected: 55. But got: 1 DONE
+[ipp-2022-tests/interpret-only/jumps/duplicateLabel] Return code expected: 52. But got: 0 DONE
+[ipp-2022-tests/interpret-only/jumps/jumpForward] Return code expected: 0. But got: 54 DONE
+[ipp-2022-tests/interpret-only/valid/all_program_attributes] Return code expected: 0. But got: 54 DONE
+[ipp-2022-tests/interpret-only/valid/defvar_move] Return code expected: 0. But got: 54 DONE
+[ipp-2022-tests/interpret-only/valid/order/discontinuously_ordered_instructions] Return code expected: 0. But got: 54 DONE
+[ipp-2022-tests/interpret-only/valid/order/unordered_instructions] Return code expected: 0. But got: 54 DONE
+[ipp-2022-tests/interpret-only/xml_structure/arg_order1] Return code expected: 0. But got: 54 DONE
+[ipp-2022-tests/interpret-only/xml_structure/duplicate_order] Return code expected: 32. But got: 0 DONE
+[ipp-2022-tests/interpret-only/xml_structure/instruction_order1] Return code expected: 0. But got: 54 DONE
+[ipp-2022-tests/interpret-only/xml_structure/negative_order] Return code expected: 32. But got: 0 DONE
+[ipp-2022-tests/interpret-only/xml_structure/wrong_tag1] Return code expected: 32. But got: 0 DONE
+[ipp-2022-tests/interpret-only/xml_structure/wrong_tag2] Return code expected: 32. But got: 0 DONE
+[ipp-2022-tests/interpret-only/xml_structure/zero_order] Return code expected: 32. But got: 0 DONE
+[ipp-2022-tests/interpret-only/31/fucked_up_xml] Return code expected: 31. But got: 1 DONE
+[ipp-2022-tests/interpret-only/xml_structure/xml_format1] Return code expected: 31. But got: 1 DONE

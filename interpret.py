@@ -34,18 +34,18 @@ class Functions(Enum):
 	INT2CHAR = 20
 	STRI2INT = 21
 	READ = 22
-	CONCAT = 24
-	STRLEN = 25
-	GETCHAR = 26
-	SETCHAR = 27
-	TYPE = 28
-	LABEL = 29
-	JUMP = 30
-	JUMPIFEQ = 31
-	JUMPIFNEQ = 32
-	EXIT = 33
-	DPRINT = 34
-	BREAK = 35
+	CONCAT = 23
+	STRLEN = 24
+	GETCHAR = 25
+	SETCHAR = 26
+	TYPE = 27
+	LABEL = 28
+	JUMP = 29
+	JUMPIFEQ = 30
+	JUMPIFNEQ = 31
+	EXIT = 32
+	DPRINT = 33
+	BREAK = 34
 
 
 CONST_FUNC = 	[[1],  # DEFVAR
@@ -71,7 +71,6 @@ CONST_FUNC = 	[[1],  # DEFVAR
 				[2],  # INT2CHAR
 				[3],  # STRI2INT
 				[2],  # READ
-				[1],  # WRITE
 				[3],  # CONCAT
 				[2],  # STRLEN
 				[3],  # GETCHAR
@@ -95,30 +94,19 @@ class Frames:
 		self.stack = []
 		self.call_stack = []
 		self.labels = []
-		self.jump = None
 
 	def add_to_labels(self, label_name, index):
 		for name in self.labels:
 			if label_name == name[0]:
-				print("Same label name " + label_name)
+				print("Same label name " + label_name, file=sys.stderr)
 				exit(52)
 		self.labels.append([label_name, index])
 
 	def search_labels(self, label_name):
-		check = 0
-		found = False
-		index = -1
 
 		for name in self.labels:
 			if label_name == name[0]:
-				check += 1
-				found = True
-			index += 1
-		if found is True and check == 1:
-			return self.labels[index]
-		elif check > 1:
-			print("Same label name " + label_name)
-			exit(52)
+				return name
 
 	def add_to_frame(self, f_type, var_name):
 		if f_type == "GF":
@@ -126,14 +114,14 @@ class Frames:
 
 		if f_type == "LF":
 			if len(self.frame_stack) == 0:
-				print("No LF on frame stack")
+				print("No LF on frame stack", file=sys.stderr)
 				exit(55)
 
 			self.frame_stack[len(self.frame_stack) - 1].append([var_name])
 
 		if f_type == "TF":
 			if self.tmp_frame is None:
-				print("No TF created")
+				print("No TF created", file=sys.stderr)
 				exit(55)
 
 			self.tmp_frame.append([var_name])
@@ -146,10 +134,10 @@ class Frames:
 					var_counter += 1
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
-				print("Redeclaration of variable: " + var_name)
+				print("Redeclaration of variable: " + var_name, file=sys.stderr)
 				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
-				print("Variable " + var_name + " doesn't exist.")
+				print("Variable " + var_name + " doesn't exist.", file=sys.stderr)
 				exit(54)
 
 		elif f_type == "LF":
@@ -158,15 +146,15 @@ class Frames:
 					var_counter += 1
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
-				print("Redeclaration of variable: " + var_name)
+				print("Redeclaration of variable: " + var_name, file=sys.stderr)
 				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
-				print("Variable " + var_name + " doesn't exist.")
+				print("Variable " + var_name + " doesn't exist.", file=sys.stderr)
 				exit(54)
 
 		elif f_type == "TF":
 			if self.tmp_frame is None:
-				print("Temporary Frame has not been created")
+				print("Temporary Frame has not been created", file=sys.stderr)
 				exit(55)
 
 			for variable in range(len(self.tmp_frame)):
@@ -174,10 +162,10 @@ class Frames:
 					var_counter += 1
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
-				print("Redeclaration of variable: " + var_name)
+				print("Redeclaration of variable: " + var_name, file=sys.stderr)
 				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
-				print("Variable " + var_name + " doesn't exist.")
+				print("Variable " + var_name + " doesn't exist.", file=sys.stderr)
 				exit(54)
 
 	def return_index(self, f_type, var_name):
@@ -196,7 +184,7 @@ class Frames:
 
 		elif f_type == "TF":
 			if frames.tmp_frame is None:
-				print("Empty Temp frame")
+				print("Empty Temp frame", file=sys.stderr)
 				exit(55)
 
 			for variable in range(len(self.tmp_frame)):
@@ -239,7 +227,7 @@ def LF_len():
 
 def to_LF():
 	if frames.tmp_frame is None:
-		print("Empty Temp frame")
+		print("Empty Temp frame", file=sys.stderr)
 		exit(55)
 
 	for variable in frames.tmp_frame:
@@ -264,7 +252,7 @@ def to_TF():
 
 def var_find_index(argument_num):
 	if frames.return_index(get_frame(argument_num), instruction.args[argument_num].value) is None:
-		print("Non defined variable " + instruction.args[argument_num].value)
+		print("Non defined variable " + instruction.args[argument_num].value, file=sys.stderr)
 		exit(54)
 
 	return frames.return_index(get_frame(argument_num), instruction.args[argument_num].value)
@@ -276,10 +264,9 @@ def find_var(frame, from_var_indx):
 			return frames.global_frame[from_var_indx]
 		else:
 			if instruction.name == 'TYPE':
-				insert_into_var('GF', from_var_indx, 'string', '')
-				return frames.global_frame[from_var_indx]
+				return None
 			else:
-				print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
+				print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.", file=sys.stderr)
 				exit(56)
 
 	elif frame == 'LF':
@@ -287,10 +274,9 @@ def find_var(frame, from_var_indx):
 			return frames.frame_stack[LF_len()][from_var_indx]
 		else:
 			if instruction.name == 'TYPE':
-				insert_into_var('LF', from_var_indx, 'string', '')
-				return frames.global_frame[from_var_indx]
+				return None
 			else:
-				print("Variable " + frames.frame_stack[LF_len()][from_var_indx][0] + " is empty.")
+				print("Variable " + frames.frame_stack[LF_len()][from_var_indx][0] + " is empty.", file=sys.stderr)
 				exit(56)
 
 	elif frame == 'TF':
@@ -298,10 +284,9 @@ def find_var(frame, from_var_indx):
 			return frames.tmp_frame[from_var_indx]
 		else:
 			if instruction.name == 'TYPE':
-				insert_into_var('TF', from_var_indx, 'string', '')
-				return frames.global_frame[from_var_indx]
+				return None
 			else:
-				print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.")
+				print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.", file=sys.stderr)
 				exit(56)
 
 
@@ -335,7 +320,7 @@ def arithm_oper(arg_num, from_var_indx):
 	if val[1] == 'int':
 		val = val[2]
 	else:
-		print("Incorrect type " + val[1])
+		print("Incorrect type " + val[1], file=sys.stderr)
 		exit(53)
 
 	return val
@@ -346,7 +331,7 @@ def logic_oper(arg_num, from_var_indx):
 	if val[1] == 'bool':
 		val = val[2]
 	else:
-		print("Incorrect type " + instruction.args[arg_num].type)
+		print("Incorrect type " + instruction.args[arg_num].type, file=sys.stderr)
 		exit(53)
 
 	return val
@@ -384,7 +369,7 @@ def check_same_type(type1, type2):
 	elif type1 == 'nil' and type2 == 'nil':
 		return 'nil'
 	else:
-		print("Not same types")
+		print("Not same types", file=sys.stderr)
 		exit(53)
 
 
@@ -397,8 +382,8 @@ args = argp.parse_args()
 
 try:
 	tree = ET.parse(args.source[0])
-except TypeError:
-	print("File is not well formed")
+except ET.ParseError:
+	print("File is not well formed", file=sys.stderr)
 	exit(31)
 else:
 	pass
@@ -407,7 +392,7 @@ else:
 root = tree.getroot()
 
 if root.tag != "program" or root.get(key='language') != "IPPcode22":
-	print("Error 32")
+	print("Incorrect language", file=sys.stderr)
 	exit(32)
 
 frames = Frames()
@@ -417,24 +402,21 @@ for child in root:
 	try:
 		root[:] = sorted(root, key=lambda child: int(child.get(key='order')))
 	except TypeError:
-		print("Incorrect element")
+		print("Incorrect element", file=sys.stderr)
+		exit(32)
+	except ValueError:
+		print("Incorrect order type", file=sys.stderr)
 		exit(32)
 	else:
 		root[:] = sorted(root, key=lambda child: int(child.get(key='order')))
 
 op_num = 0
+index = 0
 for child in root:
-
 	try:
 		child.items()[1]
 	except IndexError:
-		print("Missing order")
-		exit(32)
-
-	try:
-		int(child.get(key='order'))
-	except ValueError:
-		print("Incorrect order type")
+		print("Missing order", file=sys.stderr)
 		exit(32)
 
 	edit = list(child.items()[1])
@@ -442,32 +424,33 @@ for child in root:
 	child.set('opcode', edit[1])
 
 	if child.tag != 'instruction':
-		print("Child has wrong tag")
+		print("Child has wrong tag", file=sys.stderr)
 		exit(32)
+
+	found_func = False
+	for func in Functions:
+		if child.get(key='opcode') == func.name:
+			found_func = True
+			func_check = CONST_FUNC[func.value][0]
+			if func_check != len(child):
+				print("Invalid amount of arguments", file=sys.stderr)
+				exit(32)
+			break
 
 	for argument in child:
 		if not re.match('^arg[1-3]$', argument.tag):
-			print("Argument has wrong tag")
+			print("Argument has wrong tag", file=sys.stderr)
 			exit(32)
 		if op_num >= int(child.get(key='order')):
-			print("Incorrect order number")
+			print("Incorrect order number", file=sys.stderr)
 			exit(32)
-
-		found_func = False
-		for func in Functions:
-			if child.get(key='opcode') == func.name:
-				found_func = True
-				func_check = CONST_FUNC[func.value][0]
-				if func_check != len(child):
-					print("Invalid amount of arguments")
-					exit(32)
-				break
 
 		if found_func is False:
 			print("Incorrect OPCODE name " + child.get(key='opcode'))
 			exit(32)
 
 		child[:] = sorted(child, key=lambda argument: argument.tag)
+
 
 	op_num = int(child.get(key='order'))
 	arg1_flag = False
@@ -481,14 +464,19 @@ for child in root:
 		elif argument.tag == 'arg3' and arg1_flag is True and arg2_flag is True:
 			continue
 		else:
-			print("Missing arguments")
+			print("Missing arguments", file=sys.stderr)
 			exit(32)
+
+		if child.get(key='opcode') == 'LABEL':
+			frames.add_to_labels(argument.text, index)
 
 	try:
 		int(child.get(key='order'))
 	except ValueError:
-		print("File is not well formed")
+		print("File is not well formed", file=sys.stderr)
 		exit(32)
+
+	index += 1
 
 
 i = 0
@@ -496,16 +484,15 @@ child = list(root)
 
 while i < len(root):
 
-	print("CHILD:", child[i].get(key='order'), child[i].get(key='opcode'), child[i].tag, child[i].items())
+	print("CHILD:", child[i].get(key='order'), child[i].get(key='opcode'), child[i].tag, child[i].items(), file=sys.stderr)
 	instruction = Instruction(name=child[i].get(key='opcode'), number=child[i].get(key='order'))
 
 	for arg in child[i]:
 		instruction.add_argument(arg.get(key='type'), arg.text)
-
 	# I don't know how else I should solve this, so this will be a switch like structure
 	if instruction.name == 'DEFVAR':
 		if instruction.args[0].type != 'var':
-			print("Incorrect type: " + instruction.args[0].type + " var expected.")
+			print("Incorrect type: " + instruction.args[0].type + " var expected.", file=sys.stderr)
 			exit(53)
 
 		frames.search_frame(get_frame(0), instruction.args[0].value)
@@ -562,27 +549,15 @@ while i < len(root):
 
 	elif instruction.name == 'WRITE':
 		print(get_val(0), end='')
-		print()  # TODO TO BE DELETED
-
-	elif instruction.name == 'LABEL':
-		frames.add_to_labels(instruction.args[0].value, i)
 
 	elif instruction.name == 'JUMP':  # TODO JUMPS at the end of file will result in index error
 		label = frames.search_labels(instruction.args[0].value)
-		frames.jump = instruction.args[0].value
 
 		if label is not None:
-			if i > int(label[1]):
-				i = int(label[1])
-			frames.jump = None
-		else:
-			while i <= len(root):
-				i += 1
-				if child[i].get(key='opcode') != 'LABEL':
-					continue
-				if list(child[i])[0].text == frames.jump:
-					frames.jump = None
-					break
+			i = int(label[1])
+		elif label is None:
+			print("No label " + instruction.args[0].value + " found", file=sys.stderr)
+			exit(52)
 
 	elif instruction.name == 'JUMPIFEQ':
 		label = frames.search_labels(instruction.args[0].value)
@@ -591,19 +566,10 @@ while i < len(root):
 		val1 = get_val(1)
 		val2 = get_val(2)
 		if label is not None and val1 == val2:
-			frames.jump = instruction.args[0].value
-			if i > int(label[1]):
-				i = int(label[1])
-			frames.jump = None
-		elif val1 == val2:
-			frames.jump = instruction.args[0].value
-			while i <= len(root):
-				i += 1
-				if child[i].get(key='opcode') != 'LABEL':
-					continue
-				if list(child[i])[0].text == frames.jump:
-					frames.jump = None
-					break
+			i = int(label[1])
+		elif label is None:
+			print("No label " + instruction.args[0].value + " found", file=sys.stderr)
+			exit(52)
 
 	elif instruction.name == 'JUMPIFNEQ':
 		label = frames.search_labels(instruction.args[0].value)
@@ -612,46 +578,27 @@ while i < len(root):
 		val1 = get_val(1)
 		val2 = get_val(2)
 		if label is not None and val1 != val2:
-			frames.jump = instruction.args[0].value
-			if i > int(label[1]):
-				i = int(label[1])
-			frames.jump = None
-		elif val1 != val2:
-			frames.jump = instruction.args[0].value
-			while i <= len(root):
-				i += 1
-				if child[i].get(key='opcode') != 'LABEL':
-					continue
-				if list(child[i])[0].text == frames.jump:
-					frames.jump = None
-					break
+			i = int(label[1])
+		elif label is None:
+			print("No label " + instruction.args[0].value + " found", file=sys.stderr)
+			exit(52)
 
 	elif instruction.name == 'CALL':
 		label = frames.search_labels(instruction.args[0].value)
-		frames.jump = instruction.args[0].value
 		frames.call_stack.append(i)
-
 		if label is not None:
-			if i > int(label[1]):
-				i -= int(label[1])
-			frames.jump = None
-		else:
-			while i <= len(root):
-				i += 1
-				if child[i].get(key='opcode') != 'LABEL':
-					continue
-				if list(child[i])[0].text == frames.jump:
-					frames.jump = None
-					break
+			i = int(label[1])
+		elif label is None:
+			print("No label " + instruction.args[0].value + " found", file=sys.stderr)
+			exit(52)
 
 	elif instruction.name == 'RETURN':
-
 		if len(frames.call_stack) < 1:
-			print("Callstack is empty")
+			print("Callstack is empty", file=sys.stderr)
 			exit(56)
 		else:
 			i = frames.call_stack[len(frames.call_stack) - 1]
-			frames.call_stack.pop(len(frames.call_stack) - 1)
+			del frames.call_stack[len(frames.call_stack) - 1]
 
 	elif instruction.name == 'CREATEFRAME':
 		frames.tmp_frame = []
@@ -668,7 +615,7 @@ while i < len(root):
 		try:
 			frames.tmp_frame = frames.frame_stack[LF_len()]
 		except IndexError:
-			print("Empty Temp frame")
+			print("Empty Temp frame", file=sys.stderr)
 			exit(55)
 		else:
 			frames.tmp_frame = frames.frame_stack[LF_len()]
@@ -703,7 +650,7 @@ while i < len(root):
 		to_var_indx = var_find_index(0)
 
 		if check_same_type(get_type(1), get_type(2)) != 'int':
-			print("Incorrect type")
+			print("Incorrect type", file=sys.stderr)
 			exit(53)
 
 		if check_type_var(1):
@@ -721,7 +668,7 @@ while i < len(root):
 		try:
 			str(int(val1) + int(val2))
 		except ValueError:
-			print("Invalid int value")
+			print("Invalid int value", file=sys.stderr)
 			exit(32)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) + int(val2)))
@@ -730,7 +677,7 @@ while i < len(root):
 		to_var_indx = var_find_index(0)
 
 		if check_same_type(get_type(1), get_type(2)) != 'int':
-			print("Incorrect type")
+			print("Incorrect type", file=sys.stderr)
 			exit(53)
 
 		if check_type_var(1):
@@ -748,7 +695,7 @@ while i < len(root):
 		try:
 			str(int(val1) - int(val2))
 		except ValueError:
-			print("Invalid int type")
+			print("Invalid int type", file=sys.stderr)
 			exit(32)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) - int(val2)))
@@ -757,7 +704,7 @@ while i < len(root):
 		to_var_indx = var_find_index(0)
 
 		if check_same_type(get_type(1), get_type(2)) != 'int':
-			print("Incorrect type")
+			print("Incorrect type", file=sys.stderr)
 			exit(53)
 
 		if check_type_var(1):
@@ -775,7 +722,7 @@ while i < len(root):
 		try:
 			str(int(val1) * int(val2))
 		except ValueError:
-			print("Invalid int type")
+			print("Invalid int type", file=sys.stderr)
 			exit(32)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) * int(val2)))
@@ -784,7 +731,7 @@ while i < len(root):
 		to_var_indx = var_find_index(0)
 
 		if check_same_type(get_type(1), get_type(2)) != 'int':
-			print("Incorrect type")
+			print("Incorrect type", file=sys.stderr)
 			exit(53)
 
 		if check_type_var(1):
@@ -802,11 +749,11 @@ while i < len(root):
 		try:
 			str(int(val1) // int(val2))
 		except ValueError:
-			print("Invalid int type")
+			print("Invalid int type", file=sys.stderr)
 			exit(32)
 
 		except ZeroDivisionError:
-			print("Division by zero")
+			print("Division by zero", file=sys.stderr)
 			exit(57)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) // int(val2)))
@@ -928,7 +875,7 @@ while i < len(root):
 		try:
 			chr(int(val))
 		except:
-			print("Incorrect Unicode value")
+			print("Incorrect Unicode value", file=sys.stderr)
 			exit(58)
 		else:
 			insert_into_var(get_frame(0), to_var_indx, 'string', chr(int(val)))
@@ -942,10 +889,10 @@ while i < len(root):
 		try:
 			ord(val1[int(val2)])
 		except IndexError:
-			print("Index out of range")
+			print("Index out of range", file=sys.stderr)
 			exit(58)
 		except:
-			print("Incorrect Unicode value")
+			print("Incorrect Unicode value", file=sys.stderr)
 			exit(58)
 		else:
 			insert_into_var(get_frame(0), to_var_indx, 'int', ord(val1[int(val2)]))
@@ -957,7 +904,7 @@ while i < len(root):
 		val2 = get_val(2)
 
 		if get_type(1) != 'string' or get_type(2) != 'string':
-			print("Incorrect data type")
+			print("Incorrect data type", file=sys.stderr)
 			exit(53)
 
 		string = val1 + val2
@@ -971,7 +918,7 @@ while i < len(root):
 		type1 = get_type(1)
 
 		if type1 != 'string':
-			print("Incorrect data type")
+			print("Incorrect data type", file=sys.stderr)
 			exit(53)
 
 		val1 = len(val1)
@@ -985,20 +932,20 @@ while i < len(root):
 		type1 = get_type(1)
 
 		if type1 != 'string':
-			print("Incorrect data type")
+			print("Incorrect data type", file=sys.stderr)
 			exit(53)
 
 		val2 = get_val(2)
 		type2 = get_type(2)
 
 		if type2 != 'int':
-			print("Incorrect data type")
+			print("Incorrect data type", file=sys.stderr)
 			exit(53)
 
 		try:
 			val1[int(val2)]
 		except IndexError:
-			print("Index out of range")
+			print("Index out of range", file=sys.stderr)
 			exit(58)
 		else:
 			pass
@@ -1013,7 +960,7 @@ while i < len(root):
 		val1 = get_val(1)
 		type1 = get_type(1)
 		if type1 != 'int':
-			print("Incorrect data type")
+			print("Incorrect data type", file=sys.stderr)
 			exit(53)
 
 		val2 = get_val(2)
@@ -1024,13 +971,13 @@ while i < len(root):
 		type2 = get_type(2)
 
 		if type0 != 'string' or type2 != 'string':
-			print("Incorrect data type")
+			print("Incorrect data type", file=sys.stderr)
 			exit(53)
 
 		try:
 			val0[int(val1)]
 		except IndexError:
-			print("Index out of range")
+			print("Index out of range", file=sys.stderr)
 			exit(58)
 		else:
 			pass
@@ -1041,9 +988,12 @@ while i < len(root):
 	elif instruction.name == 'TYPE':
 		to_var_indx = var_find_index(0)
 
-		type1 = get_type(1)
-
-		insert_into_var(get_frame(0), to_var_indx, 'string', type1)
+		try:
+			get_type(1)
+		except TypeError:
+			insert_into_var(get_frame(0), to_var_indx, 'string', '')
+		else:
+			insert_into_var(get_frame(0), to_var_indx, 'string', get_type(1))
 
 	elif instruction.name == 'EXIT':
 		val = get_val(0)
@@ -1051,11 +1001,11 @@ while i < len(root):
 		try:
 			int(val)
 		except ValueError:
-			print("Invalid exit code " + val)
+			print("Invalid exit code " + val, file=sys.stderr)
 			exit(57)
 		else:
 			if int(val) > 50 or int(val) < 0:
-				print("Invalid exit code " + val)
+				print("Invalid exit code " + val, file=sys.stderr)
 				exit(57)
 
 			exit(int(val))
@@ -1083,7 +1033,3 @@ while i < len(root):
 	print("LABELS:", frames.labels, file=sys.stderr)
 	print("CALL_STACK:", frames.call_stack, file=sys.stderr)
 	print("FUNCTIONS: read operands:", len(instruction.args), "\n", file=sys.stderr)
-
-if frames.jump is not None:
-	print("No label " + frames.jump + " found")
-	exit(52)
