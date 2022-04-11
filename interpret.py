@@ -7,7 +7,7 @@ import argparse
 import xml.etree.ElementTree as ET
 from enum import Enum
 import sys
-import warnings
+import re
 
 
 class Functions(Enum):
@@ -98,9 +98,13 @@ class Frames:
 		self.jump = None
 
 	def add_to_labels(self, label_name, index):
+		for name in self.labels:
+			if label_name == name[0]:
+				print("Same label name " + label_name)
+				exit(52)
 		self.labels.append([label_name, index])
 
-	def seach_labels(self, label_name):
+	def search_labels(self, label_name):
 		check = 0
 		found = False
 		index = -1
@@ -161,6 +165,10 @@ class Frames:
 				exit(54)
 
 		elif f_type == "TF":
+			if self.tmp_frame is None:
+				print("Temporary Frame has not been created")
+				exit(55)
+
 			for variable in range(len(self.tmp_frame)):
 				if var_name == self.tmp_frame[variable][0]:
 					var_counter += 1
@@ -187,6 +195,10 @@ class Frames:
 				index += 1
 
 		elif f_type == "TF":
+			if frames.tmp_frame is None:
+				print("Empty Temp frame")
+				exit(55)
+
 			for variable in range(len(self.tmp_frame)):
 				if var_name == self.tmp_frame[variable][0]:
 					return index
@@ -226,6 +238,10 @@ def LF_len():
 
 
 def to_LF():
+	if frames.tmp_frame is None:
+		print("Empty Temp frame")
+		exit(55)
+
 	for variable in frames.tmp_frame:
 		new_var = variable[0].partition("@")
 
@@ -384,6 +400,8 @@ try:
 except TypeError:
 	print("File is not well formed")
 	exit(31)
+else:
+	pass
 
 # load xml
 root = tree.getroot()
@@ -395,40 +413,94 @@ if root.tag != "program" or root.get(key='language') != "IPPcode22":
 frames = Frames()
 first_iter = True
 
-
 for child in root:
+	try:
+		root[:] = sorted(root, key=lambda child: int(child.get(key='order')))
+	except TypeError:
+		print("Incorrect element")
+		exit(32)
+	else:
+		root[:] = sorted(root, key=lambda child: int(child.get(key='order')))
+
+op_num = 0
+for child in root:
+
+	try:
+		child.items()[1]
+	except IndexError:
+		print("Missing order")
+		exit(32)
+
+	try:
+		int(child.get(key='order'))
+	except ValueError:
+		print("Incorrect order type")
+		exit(32)
+
 	edit = list(child.items()[1])
 	edit[1] = edit[1].upper()
 	child.set('opcode', edit[1])
-	root[:] = sorted(root, key=lambda child: int(child.get(key='order')))
+
+	if child.tag != 'instruction':
+		print("Child has wrong tag")
+		exit(32)
+
+	for argument in child:
+		if not re.match('^arg[1-3]$', argument.tag):
+			print("Argument has wrong tag")
+			exit(32)
+		if op_num >= int(child.get(key='order')):
+			print("Incorrect order number")
+			exit(32)
+
+		found_func = False
+		for func in Functions:
+			if child.get(key='opcode') == func.name:
+				found_func = True
+				func_check = CONST_FUNC[func.value][0]
+				if func_check != len(child):
+					print("Invalid amount of arguments")
+					exit(32)
+				break
+
+		if found_func is False:
+			print("Incorrect OPCODE name " + child.get(key='opcode'))
+			exit(32)
+
+		child[:] = sorted(child, key=lambda argument: argument.tag)
+
+	op_num = int(child.get(key='order'))
+	arg1_flag = False
+	arg2_flag = False
+	for argument in child:
+
+		if argument.tag == 'arg1' and arg1_flag is False and arg2_flag is False:
+			arg1_flag = True
+		elif argument.tag == 'arg2' and arg1_flag is True and arg2_flag is False:
+			arg2_flag = True
+		elif argument.tag == 'arg3' and arg1_flag is True and arg2_flag is True:
+			continue
+		else:
+			print("Missing arguments")
+			exit(32)
+
+	try:
+		int(child.get(key='order'))
+	except ValueError:
+		print("File is not well formed")
+		exit(32)
+
 
 i = 0
-warnings.filterwarnings("ignore")
-child = root.getchildren()
+child = list(root)
 
 while i < len(root):
 
 	print("CHILD:", child[i].get(key='order'), child[i].get(key='opcode'), child[i].tag, child[i].items())
 	instruction = Instruction(name=child[i].get(key='opcode'), number=child[i].get(key='order'))
 
-	flag_arg1 = False
-	flag_arg2 = False
 	for arg in child[i]:
 		instruction.add_argument(arg.get(key='type'), arg.text)
-
-	found_func = False
-	for func in Functions:
-		if instruction.name == func.name:
-			found_func = True
-			func_check = CONST_FUNC[func.value][0]
-			if func_check != len(instruction.args):
-				print("Error 32")
-				exit(32)
-			break
-
-	if found_func is False:
-		print("Error 32")
-		exit(32)
 
 	# I don't know how else I should solve this, so this will be a switch like structure
 	if instruction.name == 'DEFVAR':
@@ -451,7 +523,7 @@ while i < len(root):
 			val_type = find_var(get_frame(1), from_var_indx)
 			value = find_var(get_frame(1), from_var_indx)
 
-			insert_into_var(get_frame(0), to_var_indx, type[1], value[2])
+			insert_into_var(get_frame(0), to_var_indx, val_type[1], value[2])
 
 	elif instruction.name == 'READ':
 		to_var_indx = var_find_index(0)
@@ -495,8 +567,8 @@ while i < len(root):
 	elif instruction.name == 'LABEL':
 		frames.add_to_labels(instruction.args[0].value, i)
 
-	elif instruction.name == 'JUMP':
-		label = frames.seach_labels(instruction.args[0].value)
+	elif instruction.name == 'JUMP':  # TODO JUMPS at the end of file will result in index error
+		label = frames.search_labels(instruction.args[0].value)
 		frames.jump = instruction.args[0].value
 
 		if label is not None:
@@ -508,12 +580,12 @@ while i < len(root):
 				i += 1
 				if child[i].get(key='opcode') != 'LABEL':
 					continue
-				if child[i].getchildren()[0].text == frames.jump:
+				if list(child[i])[0].text == frames.jump:
 					frames.jump = None
 					break
 
 	elif instruction.name == 'JUMPIFEQ':
-		label = frames.seach_labels(instruction.args[0].value)
+		label = frames.search_labels(instruction.args[0].value)
 		check_same_type(get_type(1), get_type(2))
 
 		val1 = get_val(1)
@@ -529,12 +601,12 @@ while i < len(root):
 				i += 1
 				if child[i].get(key='opcode') != 'LABEL':
 					continue
-				if child[i].getchildren()[0].text == frames.jump:
+				if list(child[i])[0].text == frames.jump:
 					frames.jump = None
 					break
 
 	elif instruction.name == 'JUMPIFNEQ':
-		label = frames.seach_labels(instruction.args[0].value)
+		label = frames.search_labels(instruction.args[0].value)
 		check_same_type(get_type(1), get_type(2))
 
 		val1 = get_val(1)
@@ -550,12 +622,12 @@ while i < len(root):
 				i += 1
 				if child[i].get(key='opcode') != 'LABEL':
 					continue
-				if child[i].getchildren()[0].text == frames.jump:
+				if list(child[i])[0].text == frames.jump:
 					frames.jump = None
 					break
 
 	elif instruction.name == 'CALL':
-		label = frames.seach_labels(instruction.args[0].value)
+		label = frames.search_labels(instruction.args[0].value)
 		frames.jump = instruction.args[0].value
 		frames.call_stack.append(i)
 
@@ -568,7 +640,7 @@ while i < len(root):
 				i += 1
 				if child[i].get(key='opcode') != 'LABEL':
 					continue
-				if child[i].getchildren()[0].text == frames.jump:
+				if list(child[i])[0].text == frames.jump:
 					frames.jump = None
 					break
 
@@ -585,16 +657,22 @@ while i < len(root):
 		frames.tmp_frame = []
 
 	elif instruction.name == 'PUSHFRAME':
+
 		to_LF()
-		if frames.tmp_frame is not None:
-			frames.frame_stack.append(frames.tmp_frame)
-			frames.tmp_frame = None
-		else:
-			print("Empty Temp frame.")
-			exit(55)
+		frames.frame_stack.append(frames.tmp_frame)
+		frames.tmp_frame = None
+
 
 	elif instruction.name == 'POPFRAME':
-		frames.tmp_frame = frames.frame_stack[LF_len()]
+
+		try:
+			frames.tmp_frame = frames.frame_stack[LF_len()]
+		except IndexError:
+			print("Empty Temp frame")
+			exit(55)
+		else:
+			frames.tmp_frame = frames.frame_stack[LF_len()]
+
 		to_TF()
 		del frames.frame_stack[LF_len()]
 
@@ -624,6 +702,10 @@ while i < len(root):
 	elif instruction.name == 'ADD':
 		to_var_indx = var_find_index(0)
 
+		if check_same_type(get_type(1), get_type(2)) != 'int':
+			print("Incorrect type")
+			exit(53)
+
 		if check_type_var(1):
 			from_var1_indx = var_find_index(1)
 			val1 = arithm_oper(1, from_var1_indx)
@@ -635,12 +717,22 @@ while i < len(root):
 			val2 = arithm_oper(2, from_var2_indx)
 		else:
 			val2 = instruction.args[2].value
+
+		try:
+			str(int(val1) + int(val2))
+		except ValueError:
+			print("Invalid int value")
+			exit(32)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) + int(val2)))
 
 	elif instruction.name == 'SUB':
 		to_var_indx = var_find_index(0)
 
+		if check_same_type(get_type(1), get_type(2)) != 'int':
+			print("Incorrect type")
+			exit(53)
+
 		if check_type_var(1):
 			from_var1_indx = var_find_index(1)
 			val1 = arithm_oper(1, from_var1_indx)
@@ -652,12 +744,22 @@ while i < len(root):
 			val2 = arithm_oper(2, from_var2_indx)
 		else:
 			val2 = instruction.args[2].value
+
+		try:
+			str(int(val1) - int(val2))
+		except ValueError:
+			print("Invalid int type")
+			exit(32)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) - int(val2)))
 
 	elif instruction.name == 'MUL':
 		to_var_indx = var_find_index(0)
 
+		if check_same_type(get_type(1), get_type(2)) != 'int':
+			print("Incorrect type")
+			exit(53)
+
 		if check_type_var(1):
 			from_var1_indx = var_find_index(1)
 			val1 = arithm_oper(1, from_var1_indx)
@@ -669,12 +771,22 @@ while i < len(root):
 			val2 = arithm_oper(2, from_var2_indx)
 		else:
 			val2 = instruction.args[2].value
+
+		try:
+			str(int(val1) * int(val2))
+		except ValueError:
+			print("Invalid int type")
+			exit(32)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) * int(val2)))
 
 	elif instruction.name == 'IDIV':
 		to_var_indx = var_find_index(0)
 
+		if check_same_type(get_type(1), get_type(2)) != 'int':
+			print("Incorrect type")
+			exit(53)
+
 		if check_type_var(1):
 			from_var1_indx = var_find_index(1)
 			val1 = arithm_oper(1, from_var1_indx)
@@ -686,6 +798,16 @@ while i < len(root):
 			val2 = arithm_oper(2, from_var2_indx)
 		else:
 			val2 = instruction.args[2].value
+
+		try:
+			str(int(val1) // int(val2))
+		except ValueError:
+			print("Invalid int type")
+			exit(32)
+
+		except ZeroDivisionError:
+			print("Division by zero")
+			exit(57)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) // int(val2)))
 
@@ -896,7 +1018,7 @@ while i < len(root):
 
 		val2 = get_val(2)
 		if val2 == '':
-			print("Empty variable")
+			print("Empty string")
 			exit(58)
 
 		type2 = get_type(2)
