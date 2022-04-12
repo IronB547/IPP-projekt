@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 from enum import Enum
 import sys
 import re
+import os.path
 
 
 class Functions(Enum):
@@ -379,9 +380,30 @@ argp.add_argument("--input", nargs=1, help="TODO")
 
 args = argp.parse_args()
 
+input_file = False
+if args.input is not None:
+	if os.path.exists(args.input[0]):
+		input_file = args.input[0]
+	else:
+		print("Cannot open file " + args.input[0], file=sys.stderr)
+		exit(11)
+
+source_file = False
+if args.source is None and args.input is not None:
+	source_file = input()
+elif args.source is not None and args.input is None:
+	if os.path.exists(args.source[0].name):
+		source_file = args.source[0]
+	else:
+		print("Cannot open file " + args.source[0], file=sys.stderr)
+		exit(11)
+
+if input_file is False and source_file is False:
+	print("Incorrect combination of input files, use --h, --help for more info", file=sys.stderr)
+	exit(10)
 
 try:
-	tree = ET.parse(args.source[0])
+	tree = ET.parse(source_file)
 except ET.ParseError:
 	print("File is not well formed", file=sys.stderr)
 	exit(31)
@@ -419,9 +441,9 @@ for child in root:
 		print("Missing order", file=sys.stderr)
 		exit(32)
 
-	edit = list(child.items()[1])
-	edit[1] = edit[1].upper()
-	child.set('opcode', edit[1])
+	edit = child.get(key='opcode')
+	edit = edit.upper()
+	child.set('opcode', edit)
 
 	if child.tag != 'instruction':
 		print("Child has wrong tag", file=sys.stderr)
@@ -498,7 +520,7 @@ while i < len(root):
 		frames.search_frame(get_frame(0), instruction.args[0].value)
 		frames.add_to_frame(get_frame(0), instruction.args[0].value)
 
-	elif instruction.name == 'MOVE':  # Move is supposed to COPY from var to var TODO
+	elif instruction.name == 'MOVE':
 		frames.search_frame(get_frame(0), instruction.args[0].value)
 
 		to_var_indx = var_find_index(0)
@@ -515,10 +537,13 @@ while i < len(root):
 	elif instruction.name == 'READ':
 		to_var_indx = var_find_index(0)
 
-		inp = input()  # Can also work from --input TODO
+		if input_file is False:
+			inp = input()
+		else:
+			file = open(input_file, 'r')
+			inp = file.read()
 
 		val_type = get_val(1)
-		print(inp.lower())
 
 		if val_type != 'int':
 
@@ -547,10 +572,25 @@ while i < len(root):
 		else:
 			insert_into_var(get_frame(0), to_var_indx, input_type, inp)
 
-	elif instruction.name == 'WRITE':
-		print(get_val(0), end='')
+		if input_file is not False:
+			file.close()
 
-	elif instruction.name == 'JUMP':  # TODO JUMPS at the end of file will result in index error
+	elif instruction.name == 'WRITE':
+		val = get_val(0)
+
+		index = 0
+		for char in val:
+			if char == "\\":
+				convert = val[index+1:index+4]
+				chr(int(convert))
+				i += len(convert)
+				val = val.replace(val[index:index+4], chr(int(convert)))
+
+			index += 1
+
+		print(val, end='')
+
+	elif instruction.name == 'JUMP':
 		label = frames.search_labels(instruction.args[0].value)
 
 		if label is not None:
