@@ -9,6 +9,7 @@ from enum import Enum
 import sys
 import re
 import os.path
+from io import StringIO
 
 
 class Functions(Enum):
@@ -304,7 +305,6 @@ def convert_ascii(val):
 	if val is not None:
 		index = 0
 		for char in val:
-			print(val, index, len(val))
 			if char == "\\":
 				convert = val[index + 1:index + 4]
 				try:
@@ -313,7 +313,6 @@ def convert_ascii(val):
 					break
 				val = val.replace(val[index:index + 4], chr(int(convert)))
 				index -= 3
-				print(val, index, len(val))
 			index += 1
 
 	return val
@@ -549,6 +548,7 @@ for child in root:
 
 
 i = 0
+line_count = 0
 child = list(root)
 
 while i < len(root):
@@ -589,44 +589,46 @@ while i < len(root):
 		else:
 			file = open(input_file, 'r')
 			inp = file.read()
+			inp = inp.splitlines()
 
 		val_type = get_val(1)
-		print(" I AM HERE HELLO", val_type)
-		if val_type != 'int':
-
-			if val_type != 'bool':
-				if val_type != 'string':
-					input_type = 'nil'
-				else:
-					input_type = 'string'
-			else:
-				input_type = 'bool'
-		else:
+		if val_type == 'int':
 			try:
-				int(inp)
+				int(inp[line_count])
 			except ValueError:
 				input_type = 'nil'
 			else:
 				input_type = 'int'
-
-		if input_type == 'bool':
-			if inp.lower() == 'true':
-				insert_into_var(get_frame(0), to_var_indx, input_type, 'true')
-			else:
-				insert_into_var(get_frame(0), to_var_indx, input_type, 'false')
-		elif input_type == 'nil':
-			insert_into_var(get_frame(0), to_var_indx, input_type, 'nil')
 		else:
-			insert_into_var(get_frame(0), to_var_indx, input_type, inp)
+			if val_type == 'bool':
+				input_type = 'bool'
+			else:
+				if val_type == 'string':
+					input_type = 'string'
+				else:
+					input_type = 'nil'
+
+		if val_type == 'bool':
+			if inp.lower() == 'true':
+				insert_into_var(get_frame(0), to_var_indx, val_type, 'true')
+			else:
+				insert_into_var(get_frame(0), to_var_indx, val_type, 'false')
+		elif val_type == 'nil':
+			insert_into_var(get_frame(0), to_var_indx, val_type, 'nil')
+		else:
+			insert_into_var(get_frame(0), to_var_indx, input_type, inp[line_count])
 
 		if input_file is not None:
 			file.close()
 
+		line_count += 1
+
 	elif instruction.name == 'WRITE':
 		val = get_val(0)
 
-		if val != 'nil':
-			print(val, end='')
+		if get_type(0) == 'nil':
+			val = ''
+		print(val, end='')
 
 	elif instruction.name == 'JUMP':
 		label = frames.search_labels(instruction.args[0].value)
@@ -643,11 +645,33 @@ while i < len(root):
 		val1 = get_val(1)
 		val2 = get_val(2)
 
+		type1 = get_type(1)
+		type2 = get_type(2)
+
+		check_type = False
+		if type1 == 'int' and type2 == 'int':
+			check_type = True
+		elif type1 == 'bool' and type2 == 'bool':
+			check_type = True
+		elif type1 == 'string' and type2 == 'string':
+			if val1 is None:
+				val1 = ''
+			if val2 is None:
+				val2 = ''
+			check_type = True
+
+		elif type1 == 'nil' or type2 == 'nil':
+			check_type = True
+
 		if label is not None and val1 == val2:
 			i = int(label[1])
 		elif label is None:
 			print("No label " + instruction.args[0].value + " found", file=sys.stderr)
 			exit(52)
+
+		if check_type is False:
+			print("Incorrect type", file=sys.stderr)
+			exit(53)
 
 	elif instruction.name == 'JUMPIFNEQ':
 		label = frames.search_labels(instruction.args[0].value)
@@ -655,11 +679,33 @@ while i < len(root):
 		val1 = get_val(1)
 		val2 = get_val(2)
 
+		type1 = get_type(1)
+		type2 = get_type(2)
+
+		check_type = False
+		if type1 == 'int' and type2 == 'int':
+			check_type = True
+		elif type1 == 'bool' and type2 == 'bool':
+			check_type = True
+		elif type1 == 'string' and type2 == 'string':
+			if val1 is None:
+				val1 = ''
+			if val2 is None:
+				val2 = ''
+			check_type = True
+
+		elif type1 == 'nil' or type2 == 'nil':
+			check_type = True
+
 		if label is not None and val1 != val2:
 			i = int(label[1])
 		elif label is None:
 			print("No label " + instruction.args[0].value + " found", file=sys.stderr)
 			exit(52)
+
+		if check_type is False:
+			print("Incorrect type", file=sys.stderr)
+			exit(53)
 
 	elif instruction.name == 'CALL':
 		label = frames.search_labels(instruction.args[0].value)
@@ -1106,7 +1152,11 @@ while i < len(root):
 			exit(53)
 
 		val2 = get_val(2)
-		print(val2)
+
+		if int(val1) < 0 or int(val1) >= len(val0):
+			print("Index out of range", file=sys.stderr)
+			exit(58)
+
 		if val2 == '':
 			print("Empty string")
 			exit(58)
@@ -1116,14 +1166,6 @@ while i < len(root):
 		if type0 != 'string' or type2 != 'string':
 			print("Incorrect data type", file=sys.stderr)
 			exit(53)
-
-		try:
-			val0[int(val1)]
-		except IndexError:
-			print("Index out of range", file=sys.stderr)
-			exit(58)
-		else:
-			pass
 
 		val0 = val0[:int(val1)] + val2[0] + val0[int(val1)+1:]
 		insert_into_var(get_frame(0), to_var_indx, 'string', val0)
@@ -1149,8 +1191,8 @@ while i < len(root):
 			print("Invalid exit code " + val, file=sys.stderr)
 			exit(57)
 
-			exit(int(val))
-			break
+		exit(int(val))
+		break
 
 	elif instruction.name == 'DPRINT':
 		val = get_val(0)
@@ -1166,6 +1208,7 @@ while i < len(root):
 		print("CALL_STACK:", frames.call_stack, file=sys.stderr)
 
 	i += 1
+
 
 	print("GLOBAL: ", frames.global_frame, file=sys.stderr)
 	print("LOCAL: ", frames.frame_stack, file=sys.stderr)

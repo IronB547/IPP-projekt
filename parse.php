@@ -304,23 +304,7 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 			print_instruction($instruction, $cut);
 			$value = get_val($cut, 1);
 
-			if(preg_match("/(GF|LF|TF)@[a-zA-Z#$&*_%!?][a-zA-Z#$&*_%!?0-9]*/", $cut[1]))
-				echo("\t\t<arg1 type=\"var\">$cut[1]</arg1>")."\n";
-
-			else if(preg_match("~\bint\b~", $cut[1])) # Can only be int or bool
-				if(preg_match('/^(\+|-|)(0[xX][0-9a-fA-F]+|0b[0-1]+|(0[oO]|0)[0-7]+\b|[0-9]+)\b/', $value))
-					echo("\t\t<arg1 type=\"int\">$value</arg1>")."\n";
-				else
-					other_error();
-
-			else if(preg_match("~\bbool\b~", $value[0])) {
-				if(str_contains($value[1], "true") || str_contains($value[1], "false")) # Only true/false is accepted.
-					echo("\t\t<arg1 type=\"bool\">$value</arg1>")."\n";
-				else
-					other_error();
-			}
-			else
-				other_error();
+			determine_val($cut, $value, 1, 1);
 
 			echo "\t</instruction>\n";
 			break;
