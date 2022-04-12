@@ -1,0 +1,14 @@
+.IPPcode22
+
+DEFVAR GF@a
+
+EQ GF@a string@\065B string@A\066
+
+DEFVAR GF@b
+DEFVAR GF@c
+
+MOVE GF@b string@\065B 
+
+MOVE GF@c string@A\066
+
+EQ GF@a GF@b GF@c

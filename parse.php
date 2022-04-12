@@ -308,7 +308,7 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 				echo("\t\t<arg1 type=\"var\">$cut[1]</arg1>")."\n";
 
 			else if(preg_match("~\bint\b~", $cut[1])) # Can only be int or bool
-				if (preg_match('/^([0-9]+)\b/', $value))
+				if(preg_match('/^(\+|-|)(0[xX][0-9a-fA-F]+|0b[0-1]+|(0[oO]|0)[0-7]+\b|[0-9]+)\b/', $value))
 					echo("\t\t<arg1 type=\"int\">$value</arg1>")."\n";
 				else
 					other_error();
@@ -350,7 +350,6 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 			var_only($cut);
 
 			# Same with determine_val, but the arg type is 'type'.
-			echo $cut[2];
 			if(preg_match("~\bint\b~", $cut[2])) 
 				echo("\t\t<arg2 type=\"type\">$cut[2]</arg2>")."\n";
 
@@ -369,7 +368,8 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 		case 'WRITE':
 			check_ops($cut, 1);
 			$value = htmlspecialchars($cut[1]); # Library function to convert <, >, & and other characters into HTLM.
-			$value = explode('@', $value);
+
+			$value = get_val($cut, 1);
 
 			print_instruction($instruction, $cut);
 

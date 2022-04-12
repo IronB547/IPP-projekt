@@ -134,7 +134,7 @@ class Frames:
 				if var_name == self.global_frame[variable][0]:
 					var_counter += 1
 
-			if instruction.name == 'DEFVAR' and var_counter == 1:
+			if instruction.name == 'DEFVAR' and var_counter > 0:
 				print("Redeclaration of variable: " + var_name, file=sys.stderr)
 				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
@@ -142,11 +142,17 @@ class Frames:
 				exit(54)
 
 		elif f_type == "LF":
+			if len(self.frame_stack) < 1:
+				print("Empty Local frame", file=sys.stderr)
+				exit(55)
+
 			for variable in range(len(self.frame_stack)):
-				if var_name == self.frame_stack[LF_len()][variable]:
+				if len(self.frame_stack[LF_len()]) == 0:
+					break
+				if var_name == self.frame_stack[LF_len()][len(self.frame_stack[LF_len()]) - 1][0]:
 					var_counter += 1
 
-			if instruction.name == 'DEFVAR' and var_counter == 1:
+			if instruction.name == 'DEFVAR' and var_counter > 0:
 				print("Redeclaration of variable: " + var_name, file=sys.stderr)
 				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
@@ -162,7 +168,7 @@ class Frames:
 				if var_name == self.tmp_frame[variable][0]:
 					var_counter += 1
 
-			if instruction.name == 'DEFVAR' and var_counter == 1:
+			if instruction.name == 'DEFVAR' and var_counter > 0:
 				print("Redeclaration of variable: " + var_name, file=sys.stderr)
 				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
@@ -178,6 +184,10 @@ class Frames:
 				index += 1
 
 		elif f_type == "LF":
+			if len(self.frame_stack) < 1:
+				print("Empty Local frame", file=sys.stderr)
+				exit(55)
+
 			for variable in range(len(self.frame_stack[len(self.frame_stack) - 1])):
 				if var_name == self.frame_stack[LF_len()][variable][0]:
 					return index
@@ -290,9 +300,27 @@ def find_var(frame, from_var_indx):
 				print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.", file=sys.stderr)
 				exit(56)
 
+def convert_ascii(val):
+	if val is not None:
+		index = 0
+		for char in val:
+			print(val, index, len(val))
+			if char == "\\":
+				convert = val[index + 1:index + 4]
+				try:
+					chr(int(convert))
+				except ValueError:
+					break
+				val = val.replace(val[index:index + 4], chr(int(convert)))
+				index -= 3
+				print(val, index, len(val))
+			index += 1
+
+	return val
 
 def insert_into_var(frame, to_var_indx, from_type, from_value):
 	if frame == 'GF':
+		from_value = convert_ascii(from_value)
 		if len(frames.global_frame[to_var_indx]) > 1:
 			frames.global_frame[to_var_indx][1] = from_type
 			frames.global_frame[to_var_indx][2] = from_value
@@ -301,6 +329,7 @@ def insert_into_var(frame, to_var_indx, from_type, from_value):
 			frames.global_frame[to_var_indx].append(from_value)
 
 	elif frame == 'LF':
+		from_value = convert_ascii(from_value)
 		if len(frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx]) > 1:
 			frames.frame_stack[LF_len()][to_var_indx][1] = from_type
 			frames.frame_stack[LF_len()][to_var_indx][2] = from_value
@@ -308,6 +337,7 @@ def insert_into_var(frame, to_var_indx, from_type, from_value):
 			frames.frame_stack[LF_len()][to_var_indx].append(from_type)
 			frames.frame_stack[LF_len()][to_var_indx].append(from_value)
 	elif frame == 'TF':
+		from_value = convert_ascii(from_value)
 		if len(frames.tmp_frame[to_var_indx]) > 1:
 			frames.tmp_frame[to_var_indx][1] = from_type
 			frames.tmp_frame[to_var_indx][2] = from_value
@@ -339,12 +369,17 @@ def logic_oper(arg_num, from_var_indx):
 
 
 def get_val(arg_num):
+
 	if check_type_var(arg_num):
 		from_var_indx = var_find_index(arg_num)
 		val = find_var(get_frame(arg_num), from_var_indx)
 		val = val[2]
 	else:
+		if instruction.args[arg_num].type == 'string' and instruction.args[arg_num].value is None:
+			return ''
+
 		val = instruction.args[arg_num].value
+		val = convert_ascii(val)
 
 	return val
 
@@ -380,30 +415,42 @@ argp.add_argument("--input", nargs=1, help="TODO")
 
 args = argp.parse_args()
 
-input_file = False
-if args.input is not None:
+source_file = args.source
+input_file = args.input
+if args.source is not None and args.input is not None:
 	if os.path.exists(args.input[0]):
 		input_file = args.input[0]
 	else:
 		print("Cannot open file " + args.input[0], file=sys.stderr)
 		exit(11)
 
-source_file = False
-if args.source is None and args.input is not None:
-	source_file = input()
+	if os.path.exists(args.source[0].name):
+		source_file = args.source
+	else:
+		print("Cannot open file " + args.source[0], file=sys.stderr)
+		exit(11)
 elif args.source is not None and args.input is None:
 	if os.path.exists(args.source[0].name):
-		source_file = args.source[0]
+		source_file = args.source
 	else:
 		print("Cannot open file " + args.source[0], file=sys.stderr)
 		exit(11)
 
-if input_file is False and source_file is False:
+elif args.source is None and args.input is not None:
+	if os.path.exists(args.input[0]):
+		input_file = args.input[0]
+	else:
+		print("Cannot open file " + args.input[0], file=sys.stderr)
+		exit(11)
+
+	source_file = []
+	source_file.append(False)
+else:
 	print("Incorrect combination of input files, use --h, --help for more info", file=sys.stderr)
 	exit(10)
 
 try:
-	tree = ET.parse(source_file)
+	tree = ET.parse(source_file[0])
 except ET.ParseError:
 	print("File is not well formed", file=sys.stderr)
 	exit(31)
@@ -537,14 +584,14 @@ while i < len(root):
 	elif instruction.name == 'READ':
 		to_var_indx = var_find_index(0)
 
-		if input_file is False:
+		if input_file is None:
 			inp = input()
 		else:
 			file = open(input_file, 'r')
 			inp = file.read()
 
 		val_type = get_val(1)
-
+		print(" I AM HERE HELLO", val_type)
 		if val_type != 'int':
 
 			if val_type != 'bool':
@@ -572,23 +619,14 @@ while i < len(root):
 		else:
 			insert_into_var(get_frame(0), to_var_indx, input_type, inp)
 
-		if input_file is not False:
+		if input_file is not None:
 			file.close()
 
 	elif instruction.name == 'WRITE':
 		val = get_val(0)
 
-		index = 0
-		for char in val:
-			if char == "\\":
-				convert = val[index+1:index+4]
-				chr(int(convert))
-				i += len(convert)
-				val = val.replace(val[index:index+4], chr(int(convert)))
-
-			index += 1
-
-		print(val, end='')
+		if val != 'nil':
+			print(val, end='')
 
 	elif instruction.name == 'JUMP':
 		label = frames.search_labels(instruction.args[0].value)
@@ -601,10 +639,10 @@ while i < len(root):
 
 	elif instruction.name == 'JUMPIFEQ':
 		label = frames.search_labels(instruction.args[0].value)
-		check_same_type(get_type(1), get_type(2))
 
 		val1 = get_val(1)
 		val2 = get_val(2)
+
 		if label is not None and val1 == val2:
 			i = int(label[1])
 		elif label is None:
@@ -613,10 +651,10 @@ while i < len(root):
 
 	elif instruction.name == 'JUMPIFNEQ':
 		label = frames.search_labels(instruction.args[0].value)
-		check_same_type(get_type(1), get_type(2))
 
 		val1 = get_val(1)
 		val2 = get_val(2)
+
 		if label is not None and val1 != val2:
 			i = int(label[1])
 		elif label is None:
@@ -677,6 +715,9 @@ while i < len(root):
 			frames.stack.append([instruction.args[0].type, instruction.args[0].value])
 
 	elif instruction.name == 'POPS':
+		if len(frames.stack) == 0:
+			print("Empty stack frame", file=sys.stderr)
+			exit(56)
 
 		insert_into_var(
 			get_frame(0),
@@ -801,6 +842,8 @@ while i < len(root):
 	elif instruction.name == 'AND':
 		to_var_indx = var_find_index(0)
 
+		check_same_type(get_type(1), get_type(2))
+
 		val1 = get_val(1)
 
 		val2 = get_val(2)
@@ -813,6 +856,8 @@ while i < len(root):
 	elif instruction.name == 'OR':
 		to_var_indx = var_find_index(0)
 
+		check_same_type(get_type(1), get_type(2))
+
 		val1 = get_val(1)
 
 		val2 = get_val(2)
@@ -824,6 +869,10 @@ while i < len(root):
 
 	elif instruction.name == 'NOT':
 		to_var_indx = var_find_index(0)
+
+		if get_type(1) != 'bool':
+			print("Not same types", file=sys.stderr)
+			exit(53)
 
 		val = get_val(1)
 
@@ -841,21 +890,30 @@ while i < len(root):
 		val2 = get_val(2)
 		type2 = get_type(2)
 
-		val_type = check_same_type(type1, type2)
-
-		if type == 'int':
-			insert_into_var(get_frame(0), to_var_indx, type1, int(val1) < int(val2))
-		elif type == 'bool':
+		if type1 == 'int' and type2 == 'int':
+			insert_into_var(get_frame(0), to_var_indx, 'bool', str(int(val1) < int(val2)).lower())
+		elif type1 == 'bool' and type2 == 'bool':
 			if val1 == 'false' and val2 == 'false':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
 			elif val1 == 'false' and val2 == 'true':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'true')
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
 			elif val1 == 'true' and val2 == 'false':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
 			elif val1 == 'true' and val2 == 'true':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
-		elif type == 'string':
-			insert_into_var(get_frame(0), to_var_indx, type1, val1 < val2)
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
+		elif type1 == 'string' and type2 == 'string':
+			if val1 is None:
+				val1 = ''
+			if val2 is None:
+				val2 = ''
+			insert_into_var(get_frame(0), to_var_indx, 'bool', str(val1 < val2).lower())
+
+		elif type1 == 'nil' or type2 == 'nil':
+			print("Cannot compare nil type", file=sys.stderr)
+			exit(53)
+		else:
+			print("Invalid type", file=sys.stderr)
+			exit(53)
 
 	elif instruction.name == 'GT':
 		to_var_indx = var_find_index(0)
@@ -866,21 +924,30 @@ while i < len(root):
 		val2 = get_val(2)
 		type2 = get_type(2)
 
-		val_type = check_same_type(type1, type2)
-
-		if type == 'int':
-			insert_into_var(get_frame(0), to_var_indx, type1, int(val1) > int(val2))
-		elif type == 'bool':
+		if type1 == 'int' and type2 == 'int':
+			insert_into_var(get_frame(0), to_var_indx, 'bool', str(int(val1) > int(val2)).lower())
+		elif type1 == 'bool' and type2 == 'bool':
 			if val1 == 'false' and val2 == 'false':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
 			elif val1 == 'false' and val2 == 'true':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
 			elif val1 == 'true' and val2 == 'false':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'true')
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
 			elif val1 == 'true' and val2 == 'true':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
-		elif type == 'string':
-			insert_into_var(get_frame(0), to_var_indx, type1, val1 > val2)
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
+		elif type1 == 'string' and type2 == 'string':
+			if val1 is None:
+				val1 = ''
+			if val2 is None:
+				val2 = ''
+			insert_into_var(get_frame(0), to_var_indx, type1, str(val1 > val2).lower())
+
+		elif type1 == 'nil' or type2 == 'nil':
+			print("Cannot compare nil type", file=sys.stderr)
+			exit(53)
+		else:
+			print("Invalid type", file=sys.stderr)
+			exit(53)
 
 	elif instruction.name == 'EQ':
 		to_var_indx = var_find_index(0)
@@ -891,24 +958,39 @@ while i < len(root):
 		val2 = get_val(2)
 		type2 = get_type(2)
 
-		val_type = check_same_type(type1, type2)
-
-		if type == 'int':
-			insert_into_var(get_frame(0), to_var_indx, type1, int(val1) == int(val2))
-		elif type == 'bool':
+		if type1 == 'int' and type2 == 'int':
+			insert_into_var(get_frame(0), to_var_indx, 'bool', str(int(val1) == int(val2)).lower())
+		elif type1 == 'bool' and type2 == 'bool':
 			if val1 == 'false' and val2 == 'false':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'true')
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
 			elif val1 == 'false' and val2 == 'true':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
 			elif val1 == 'true' and val2 == 'false':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'false')
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
 			elif val1 == 'true' and val2 == 'true':
-				insert_into_var(get_frame(0), to_var_indx, type1, 'true')
-		elif type == 'string':
-			insert_into_var(get_frame(0), to_var_indx, type1, val1 == val2)
+				insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
+		elif type1 == 'string' and type2 == 'string':
+			if val1 is None:
+				val1 = ''
+			if val2 is None:
+				val2 = ''
+			insert_into_var(get_frame(0), to_var_indx, 'bool', str(val1 == val2).lower())
+
+		elif type1 == 'nil' and type2 == 'nil':
+			insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
+
+		elif type1 == 'nil' or type1 == 'nil':
+			insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
+		else:
+			print("Incorrect type", file=sys.stderr)
+			exit(53)
 
 	elif instruction.name == 'INT2CHAR':
 		to_var_indx = var_find_index(0)
+
+		if get_type(1) != 'int':
+			print("Incorrect type", file=sys.stderr)
+			exit(53)
 
 		val = get_val(1)
 
@@ -926,6 +1008,18 @@ while i < len(root):
 		val1 = get_val(1)
 		val2 = get_val(2)
 
+		if get_type(1) != 'string':
+			print("Incorrect Unicode value", file=sys.stderr)
+			exit(53)
+
+		if get_type(2) != 'int':
+			print("Incorrect type", file=sys.stderr)
+			exit(53)
+
+		if int(val2) < 0:
+			print("Index out of range", file=sys.stderr)
+			exit(58)
+
 		try:
 			ord(val1[int(val2)])
 		except IndexError:
@@ -935,7 +1029,7 @@ while i < len(root):
 			print("Incorrect Unicode value", file=sys.stderr)
 			exit(58)
 		else:
-			insert_into_var(get_frame(0), to_var_indx, 'int', ord(val1[int(val2)]))
+			insert_into_var(get_frame(0), to_var_indx, 'int', str(ord(val1[int(val2)])))
 
 	elif instruction.name == 'CONCAT':
 		to_var_indx = var_find_index(0)
@@ -947,8 +1041,12 @@ while i < len(root):
 			print("Incorrect data type", file=sys.stderr)
 			exit(53)
 
-		string = val1 + val2
+		if val1 is None:
+			val1 = ''
+		if val2 is None:
+			val2 = ''
 
+		string = val1 + val2
 		insert_into_var(get_frame(0), to_var_indx, 'string', string)
 
 	elif instruction.name == 'STRLEN':
@@ -963,7 +1061,7 @@ while i < len(root):
 
 		val1 = len(val1)
 
-		insert_into_var(get_frame(0), to_var_indx, 'int', int(val1))
+		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1)))
 
 	elif instruction.name == 'GETCHAR':
 		to_var_indx = var_find_index(0)
@@ -982,6 +1080,10 @@ while i < len(root):
 			print("Incorrect data type", file=sys.stderr)
 			exit(53)
 
+		if int(val2) < 0:
+			print("Incorrect getchar range", file=sys.stderr)
+			exit(58)
+
 		try:
 			val1[int(val2)]
 		except IndexError:
@@ -990,7 +1092,7 @@ while i < len(root):
 		else:
 			pass
 
-		insert_into_var(get_frame(0), to_var_indx, 'int', val1[int(val2)])
+		insert_into_var(get_frame(0), to_var_indx, 'string', val1[int(val2)])
 
 	elif instruction.name == 'SETCHAR':
 		to_var_indx = var_find_index(0)
@@ -1004,6 +1106,7 @@ while i < len(root):
 			exit(53)
 
 		val2 = get_val(2)
+		print(val2)
 		if val2 == '':
 			print("Empty string")
 			exit(58)
@@ -1038,15 +1141,13 @@ while i < len(root):
 	elif instruction.name == 'EXIT':
 		val = get_val(0)
 
-		try:
-			int(val)
-		except ValueError:
+		if get_type(0) != 'int':
+			print("Invalid type ", file=sys.stderr)
+			exit(53)
+
+		if int(val) > 49 or int(val) < 0:
 			print("Invalid exit code " + val, file=sys.stderr)
 			exit(57)
-		else:
-			if int(val) > 50 or int(val) < 0:
-				print("Invalid exit code " + val, file=sys.stderr)
-				exit(57)
 
 			exit(int(val))
 			break
