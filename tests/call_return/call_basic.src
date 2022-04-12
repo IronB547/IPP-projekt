@@ -1,0 +1,18 @@
+.IPPcode22
+
+DEFVAR GF@abc
+DEFVAR GF@DEF
+
+CALL call1
+
+DEFVAR GF@BAD
+
+LABEL call1
+
+CALL call2
+
+DEFVAR GF@BAD
+
+LABEL call2
+
+DEFVAR GF@GOOD

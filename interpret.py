@@ -7,7 +7,8 @@ import argparse
 import xml.etree.ElementTree as ET
 from enum import Enum
 import sys
-import warnings
+import re
+import os.path
 
 
 class Functions(Enum):
@@ -34,21 +35,21 @@ class Functions(Enum):
 	INT2CHAR = 20
 	STRI2INT = 21
 	READ = 22
-	CONCAT = 24
-	STRLEN = 25
-	GETCHAR = 26
-	SETCHAR = 27
-	TYPE = 28
-	LABEL = 29
-	JUMP = 30
-	JUMPIFEQ = 31
-	JUMPIFNEQ = 32
-	EXIT = 33
-	DPRINT = 34
-	BREAK = 35
+	CONCAT = 23
+	STRLEN = 24
+	GETCHAR = 25
+	SETCHAR = 26
+	TYPE = 27
+	LABEL = 28
+	JUMP = 29
+	JUMPIFEQ = 30
+	JUMPIFNEQ = 31
+	EXIT = 32
+	DPRINT = 33
+	BREAK = 34
 
 
-CONST_FUNC = [[1],  # DEFVAR
+CONST_FUNC = 	[[1],  # DEFVAR
 				[2],  # MOVE
 				[3],  # ADD
 				[1],  # WRITE
@@ -71,7 +72,6 @@ CONST_FUNC = [[1],  # DEFVAR
 				[2],  # INT2CHAR
 				[3],  # STRI2INT
 				[2],  # READ
-				[1],  # WRITE
 				[3],  # CONCAT
 				[2],  # STRLEN
 				[3],  # GETCHAR
@@ -95,27 +95,19 @@ class Frames:
 		self.stack = []
 		self.call_stack = []
 		self.labels = []
-		self.jump = None
 
 	def add_to_labels(self, label_name, index):
+		for name in self.labels:
+			if label_name == name[0]:
+				print("Same label name " + label_name, file=sys.stderr)
+				exit(52)
 		self.labels.append([label_name, index])
 
-	def seach_labels(self, label_name):
-		check = 0
-		found = False
-		index = -1
+	def search_labels(self, label_name):
 
 		for name in self.labels:
 			if label_name == name[0]:
-				check += 1
-				found = True
-			index += 1
-		if found is True and check == 1:
-			return self.labels[index]
-		elif check > 1:
-			print("Same label name " + label_name)
-			exit(53)  # Check correct exit code TODO
-
+				return name
 
 	def add_to_frame(self, f_type, var_name):
 		if f_type == "GF":
@@ -123,14 +115,14 @@ class Frames:
 
 		if f_type == "LF":
 			if len(self.frame_stack) == 0:
-				print("No LF on frame stack")
+				print("No LF on frame stack", file=sys.stderr)
 				exit(55)
 
 			self.frame_stack[len(self.frame_stack) - 1].append([var_name])
 
 		if f_type == "TF":
 			if self.tmp_frame is None:
-				print("No TF created")
+				print("No TF created", file=sys.stderr)
 				exit(55)
 
 			self.tmp_frame.append([var_name])
@@ -143,11 +135,11 @@ class Frames:
 					var_counter += 1
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
-				print("Redeclaration of variable: " + var_name)
-				exit(52)  # Check for correct error TODO
+				print("Redeclaration of variable: " + var_name, file=sys.stderr)
+				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
-				print("Variable " + var_name + " doesn't exist.")
-				exit(52)  # Check for correct error TODO
+				print("Variable " + var_name + " doesn't exist.", file=sys.stderr)
+				exit(54)
 
 		elif f_type == "LF":
 			for variable in range(len(self.frame_stack)):
@@ -155,23 +147,27 @@ class Frames:
 					var_counter += 1
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
-				print("Redeclaration of variable: " + var_name)
-				exit(52)  # Check for correct error TODO
+				print("Redeclaration of variable: " + var_name, file=sys.stderr)
+				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
-				print("Variable " + var_name + " doesn't exist.")
-				exit(52)  # Check for correct error TODO
+				print("Variable " + var_name + " doesn't exist.", file=sys.stderr)
+				exit(54)
 
 		elif f_type == "TF":
+			if self.tmp_frame is None:
+				print("Temporary Frame has not been created", file=sys.stderr)
+				exit(55)
+
 			for variable in range(len(self.tmp_frame)):
 				if var_name == self.tmp_frame[variable][0]:
 					var_counter += 1
 
 			if instruction.name == 'DEFVAR' and var_counter == 1:
-				print("Redeclaration of variable: " + var_name)
-				exit(52)  # Check for correct error TODO
+				print("Redeclaration of variable: " + var_name, file=sys.stderr)
+				exit(52)
 			elif instruction.name != 'DEFVAR' and var_counter == 0:
-				print("Variable " + var_name + " doesn't exist.")
-				exit(52)  # Check for correct error TODO
+				print("Variable " + var_name + " doesn't exist.", file=sys.stderr)
+				exit(54)
 
 	def return_index(self, f_type, var_name):
 		index = 0
@@ -188,6 +184,10 @@ class Frames:
 				index += 1
 
 		elif f_type == "TF":
+			if frames.tmp_frame is None:
+				print("Empty Temp frame", file=sys.stderr)
+				exit(55)
+
 			for variable in range(len(self.tmp_frame)):
 				if var_name == self.tmp_frame[variable][0]:
 					return index
@@ -209,7 +209,6 @@ class Instruction:
 
 	def add_argument(self, arg_type, value):
 		self.args.append(Argument(arg_type, value))
-		# argparse
 
 
 def get_frame(argument_num):
@@ -228,6 +227,10 @@ def LF_len():
 
 
 def to_LF():
+	if frames.tmp_frame is None:
+		print("Empty Temp frame", file=sys.stderr)
+		exit(55)
+
 	for variable in frames.tmp_frame:
 		new_var = variable[0].partition("@")
 
@@ -250,7 +253,7 @@ def to_TF():
 
 def var_find_index(argument_num):
 	if frames.return_index(get_frame(argument_num), instruction.args[argument_num].value) is None:
-		print("Non defined variable " + instruction.args[argument_num].value)
+		print("Non defined variable " + instruction.args[argument_num].value, file=sys.stderr)
 		exit(54)
 
 	return frames.return_index(get_frame(argument_num), instruction.args[argument_num].value)
@@ -262,33 +265,30 @@ def find_var(frame, from_var_indx):
 			return frames.global_frame[from_var_indx]
 		else:
 			if instruction.name == 'TYPE':
-				insert_into_var('GF', from_var_indx, 'string', '')
-				return frames.global_frame[from_var_indx]
+				return None
 			else:
-				print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.")
-				exit(54)  # Check for correct exit code TODO
+				print("Variable " + frames.global_frame[from_var_indx][0] + " is empty.", file=sys.stderr)
+				exit(56)
 
 	elif frame == 'LF':
 		if len(frames.frame_stack[LF_len()][from_var_indx]) > 1:
 			return frames.frame_stack[LF_len()][from_var_indx]
 		else:
 			if instruction.name == 'TYPE':
-				insert_into_var('LF', from_var_indx, 'string', '')
-				return frames.global_frame[from_var_indx]
+				return None
 			else:
-				print("Variable " + frames.frame_stack[LF_len()][from_var_indx][0] + " is empty.")
-				exit(54)  # Check for correct exit code TODO
+				print("Variable " + frames.frame_stack[LF_len()][from_var_indx][0] + " is empty.", file=sys.stderr)
+				exit(56)
 
 	elif frame == 'TF':
 		if len(frames.tmp_frame[from_var_indx]) > 1:
 			return frames.tmp_frame[from_var_indx]
 		else:
 			if instruction.name == 'TYPE':
-				insert_into_var('TF', from_var_indx, 'string', '')
-				return frames.global_frame[from_var_indx]
+				return None
 			else:
-				print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.")
-				exit(54)  # Check for correct exit code TODO
+				print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.", file=sys.stderr)
+				exit(56)
 
 
 def insert_into_var(frame, to_var_indx, from_type, from_value):
@@ -321,8 +321,8 @@ def arithm_oper(arg_num, from_var_indx):
 	if val[1] == 'int':
 		val = val[2]
 	else:
-		print("Incorrect type " + val[1])
-		exit(53)  # Check for correct exit code TODO
+		print("Incorrect type " + val[1], file=sys.stderr)
+		exit(53)
 
 	return val
 
@@ -332,8 +332,8 @@ def logic_oper(arg_num, from_var_indx):
 	if val[1] == 'bool':
 		val = val[2]
 	else:
-		print("Incorrect type " + instruction.args[arg_num].type)
-		exit(53)  # Check for correct exit code TODO
+		print("Incorrect type " + instruction.args[arg_num].type, file=sys.stderr)
+		exit(53)
 
 	return val
 
@@ -370,7 +370,7 @@ def check_same_type(type1, type2):
 	elif type1 == 'nil' and type2 == 'nil':
 		return 'nil'
 	else:
-		print("Not same types")
+		print("Not same types", file=sys.stderr)
 		exit(53)
 
 
@@ -380,62 +380,147 @@ argp.add_argument("--input", nargs=1, help="TODO")
 
 args = argp.parse_args()
 
+input_file = False
+if args.input is not None:
+	if os.path.exists(args.input[0]):
+		input_file = args.input[0]
+	else:
+		print("Cannot open file " + args.input[0], file=sys.stderr)
+		exit(11)
+
+source_file = False
+if args.source is None and args.input is not None:
+	source_file = input()
+elif args.source is not None and args.input is None:
+	if os.path.exists(args.source[0].name):
+		source_file = args.source[0]
+	else:
+		print("Cannot open file " + args.source[0], file=sys.stderr)
+		exit(11)
+
+if input_file is False and source_file is False:
+	print("Incorrect combination of input files, use --h, --help for more info", file=sys.stderr)
+	exit(10)
 
 try:
-	tree = ET.parse(args.source[0])
-except TypeError:
-	print("File is not well formed")
+	tree = ET.parse(source_file)
+except ET.ParseError:
+	print("File is not well formed", file=sys.stderr)
 	exit(31)
+else:
+	pass
 
 # load xml
 root = tree.getroot()
 
 if root.tag != "program" or root.get(key='language') != "IPPcode22":
-	print("Error 32")
+	print("Incorrect language", file=sys.stderr)
 	exit(32)
 
 frames = Frames()
 first_iter = True
 
-i = 0
-warnings.filterwarnings("ignore")
-child = root.getchildren()
+for child in root:
+	try:
+		root[:] = sorted(root, key=lambda child: int(child.get(key='order')))
+	except TypeError:
+		print("Incorrect element", file=sys.stderr)
+		exit(32)
+	except ValueError:
+		print("Incorrect order type", file=sys.stderr)
+		exit(32)
+	else:
+		root[:] = sorted(root, key=lambda child: int(child.get(key='order')))
 
-while i < len(root):
+op_num = 0
+index = 0
+for child in root:
+	try:
+		child.items()[1]
+	except IndexError:
+		print("Missing order", file=sys.stderr)
+		exit(32)
 
-	print("CHILD:", child[i].get(key='order'), child[i].get(key='opcode'), child[i].tag, child[i].items())
-	instruction = Instruction(name=child[i].get(key='opcode'), number=child[i].get(key='order'))
+	edit = child.get(key='opcode')
+	edit = edit.upper()
+	child.set('opcode', edit)
 
-	flag_arg1 = False
-	flag_arg2 = False
-	for arg in child[i]:
-		instruction.add_argument(arg.get(key='type'), arg.text)
+	if child.tag != 'instruction':
+		print("Child has wrong tag", file=sys.stderr)
+		exit(32)
 
 	found_func = False
 	for func in Functions:
-		if instruction.name == func.name:
+		if child.get(key='opcode') == func.name:
 			found_func = True
 			func_check = CONST_FUNC[func.value][0]
-			if func_check != len(instruction.args):
-				print("Error 32")
+			if func_check != len(child):
+				print("Invalid amount of arguments", file=sys.stderr)
 				exit(32)
 			break
-	# print("\n",instruction.name)
 
-	if found_func is False:
-		print("Error 32")
+	for argument in child:
+		if not re.match('^arg[1-3]$', argument.tag):
+			print("Argument has wrong tag", file=sys.stderr)
+			exit(32)
+		if op_num >= int(child.get(key='order')):
+			print("Incorrect order number", file=sys.stderr)
+			exit(32)
+
+		if found_func is False:
+			print("Incorrect OPCODE name " + child.get(key='opcode'))
+			exit(32)
+
+		child[:] = sorted(child, key=lambda argument: argument.tag)
+
+
+	op_num = int(child.get(key='order'))
+	arg1_flag = False
+	arg2_flag = False
+	for argument in child:
+
+		if argument.tag == 'arg1' and arg1_flag is False and arg2_flag is False:
+			arg1_flag = True
+		elif argument.tag == 'arg2' and arg1_flag is True and arg2_flag is False:
+			arg2_flag = True
+		elif argument.tag == 'arg3' and arg1_flag is True and arg2_flag is True:
+			continue
+		else:
+			print("Missing arguments", file=sys.stderr)
+			exit(32)
+
+		if child.get(key='opcode') == 'LABEL':
+			frames.add_to_labels(argument.text, index)
+
+	try:
+		int(child.get(key='order'))
+	except ValueError:
+		print("File is not well formed", file=sys.stderr)
 		exit(32)
 
+	index += 1
+
+
+i = 0
+child = list(root)
+
+while i < len(root):
+
+	print("CHILD:", child[i].get(key='order'), child[i].get(key='opcode'), child[i].tag, child[i].items(), file=sys.stderr)
+	instruction = Instruction(name=child[i].get(key='opcode'), number=child[i].get(key='order'))
+
+	for arg in child[i]:
+		instruction.add_argument(arg.get(key='type'), arg.text)
 	# I don't know how else I should solve this, so this will be a switch like structure
 	if instruction.name == 'DEFVAR':
 		if instruction.args[0].type != 'var':
-			print("Incorrect type: " + instruction.args[0].type + " var expected.")
+			print("Incorrect type: " + instruction.args[0].type + " var expected.", file=sys.stderr)
 			exit(53)
 
 		frames.search_frame(get_frame(0), instruction.args[0].value)
 		frames.add_to_frame(get_frame(0), instruction.args[0].value)
 
-	elif instruction.name == 'MOVE':  # Move is supposed to COPY from var to var TODO
+	elif instruction.name == 'MOVE':
 		frames.search_frame(get_frame(0), instruction.args[0].value)
 
 		to_var_indx = var_find_index(0)
@@ -447,15 +532,18 @@ while i < len(root):
 			val_type = find_var(get_frame(1), from_var_indx)
 			value = find_var(get_frame(1), from_var_indx)
 
-			insert_into_var(get_frame(0), to_var_indx, type[1], value[2])
+			insert_into_var(get_frame(0), to_var_indx, val_type[1], value[2])
 
 	elif instruction.name == 'READ':
 		to_var_indx = var_find_index(0)
 
-		inp = input()
+		if input_file is False:
+			inp = input()
+		else:
+			file = open(input_file, 'r')
+			inp = file.read()
 
 		val_type = get_val(1)
-		print(inp.lower())
 
 		if val_type != 'int':
 
@@ -484,135 +572,94 @@ while i < len(root):
 		else:
 			insert_into_var(get_frame(0), to_var_indx, input_type, inp)
 
+		if input_file is not False:
+			file.close()
 
 	elif instruction.name == 'WRITE':
-		to_var_indx = var_find_index(0)
-		if get_frame(0) == 'GF':
-			if len(frames.global_frame[to_var_indx]) > 1:
-				print(frames.global_frame[to_var_indx][2], end='')
-			else:
-				print("Variable: " + frames.global_frame[to_var_indx][0] + " is empty")
-				exit(53)  # Check correct exit code TODO
+		val = get_val(0)
 
-		elif get_frame(0) == 'LF':
-			if len(frames.frame_stack[LF_len()][to_var_indx]) > 1:
-				print(frames.frame_stack[LF_len()][to_var_indx][2], end='')
-			else:
-				print("Variable: " + frames.frame_stack[len(frames.frame_stack) - 1][to_var_indx][0] + " is empty")
-				exit(53)  # Check correct exit code TODO
+		index = 0
+		for char in val:
+			if char == "\\":
+				convert = val[index+1:index+4]
+				chr(int(convert))
+				i += len(convert)
+				val = val.replace(val[index:index+4], chr(int(convert)))
 
-		elif get_frame(0) == 'TF':
-			if len(frames.tmp_frame[to_var_indx]) > 1:
-				print(frames.tmp_frame[to_var_indx][2], end='')
-			else:
-				print("Variable: " + frames.tmp_frame[to_var_indx][0] + " is empty")
-				exit(53)  # Check correct exit code TODO
+			index += 1
 
-		print()  # TO BE DELETED, JUST FOR BETTER PRINTS
-
-	elif instruction.name == 'LABEL':
-		frames.add_to_labels(instruction.args[0].value, i)
+		print(val, end='')
 
 	elif instruction.name == 'JUMP':
-		label = frames.seach_labels(instruction.args[0].value)
-		frames.jump = instruction.args[0].value
+		label = frames.search_labels(instruction.args[0].value)
 
 		if label is not None:
-			if i > int(label[1]):
-				i = int(label[1])
-			frames.jump = None
-		else:
-			while i <= len(root):
-				i += 1
-				if child[i].get(key='opcode') != 'LABEL':
-					continue
-				if child[i].getchildren()[0].text == frames.jump:
-					frames.jump = None
-					break
+			i = int(label[1])
+		elif label is None:
+			print("No label " + instruction.args[0].value + " found", file=sys.stderr)
+			exit(52)
 
 	elif instruction.name == 'JUMPIFEQ':
-		label = frames.seach_labels(instruction.args[0].value)
+		label = frames.search_labels(instruction.args[0].value)
 		check_same_type(get_type(1), get_type(2))
 
 		val1 = get_val(1)
 		val2 = get_val(2)
 		if label is not None and val1 == val2:
-			frames.jump = instruction.args[0].value
-			if i > int(label[1]):
-				i = int(label[1])
-			frames.jump = None
-		elif val1 == val2:
-			frames.jump = instruction.args[0].value
-			while i <= len(root):
-				i += 1
-				if child[i].get(key='opcode') != 'LABEL':
-					continue
-				if child[i].getchildren()[0].text == frames.jump:
-					frames.jump = None
-					break
+			i = int(label[1])
+		elif label is None:
+			print("No label " + instruction.args[0].value + " found", file=sys.stderr)
+			exit(52)
 
 	elif instruction.name == 'JUMPIFNEQ':
-		label = frames.seach_labels(instruction.args[0].value)
+		label = frames.search_labels(instruction.args[0].value)
 		check_same_type(get_type(1), get_type(2))
 
 		val1 = get_val(1)
 		val2 = get_val(2)
 		if label is not None and val1 != val2:
-			frames.jump = instruction.args[0].value
-			if i > int(label[1]):
-				i = int(label[1])
-			frames.jump = None
-		elif val1 != val2:
-			frames.jump = instruction.args[0].value
-			while i <= len(root):
-				i += 1
-				if child[i].get(key='opcode') != 'LABEL':
-					continue
-				if child[i].getchildren()[0].text == frames.jump:
-					frames.jump = None
-					break
+			i = int(label[1])
+		elif label is None:
+			print("No label " + instruction.args[0].value + " found", file=sys.stderr)
+			exit(52)
 
 	elif instruction.name == 'CALL':
-		label = frames.seach_labels(instruction.args[0].value)
-		frames.jump = instruction.args[0].value
+		label = frames.search_labels(instruction.args[0].value)
 		frames.call_stack.append(i)
-
 		if label is not None:
-			if i > int(label[1]):
-				i -= int(label[1])
-			frames.jump = None
-		else:
-			while i <= len(root):
-				i += 1
-				if child[i].get(key='opcode') != 'LABEL':
-					continue
-				if child[i].getchildren()[0].text == frames.jump:
-					frames.jump = None
-					break
+			i = int(label[1])
+		elif label is None:
+			print("No label " + instruction.args[0].value + " found", file=sys.stderr)
+			exit(52)
 
 	elif instruction.name == 'RETURN':
-
 		if len(frames.call_stack) < 1:
-			print("Callstack is empty")
-			exit(56)  # Check correct exit code TODO
+			print("Callstack is empty", file=sys.stderr)
+			exit(56)
 		else:
 			i = frames.call_stack[len(frames.call_stack) - 1]
-			frames.call_stack.pop(len(frames.call_stack) - 1)
+			del frames.call_stack[len(frames.call_stack) - 1]
 
 	elif instruction.name == 'CREATEFRAME':
 		frames.tmp_frame = []
 
 	elif instruction.name == 'PUSHFRAME':
+
 		to_LF()
-		if frames.tmp_frame is not None:
-			frames.frame_stack.append(frames.tmp_frame)
-			frames.tmp_frame = None
-		else:
-			print("Empty Temp frame.")
-			exit(53)  # Check for correct exit code TODO
+		frames.frame_stack.append(frames.tmp_frame)
+		frames.tmp_frame = None
+
 
 	elif instruction.name == 'POPFRAME':
-		frames.tmp_frame = frames.frame_stack[LF_len()]
+
+		try:
+			frames.tmp_frame = frames.frame_stack[LF_len()]
+		except IndexError:
+			print("Empty Temp frame", file=sys.stderr)
+			exit(55)
+		else:
+			frames.tmp_frame = frames.frame_stack[LF_len()]
+
 		to_TF()
 		del frames.frame_stack[LF_len()]
 
@@ -642,6 +689,10 @@ while i < len(root):
 	elif instruction.name == 'ADD':
 		to_var_indx = var_find_index(0)
 
+		if check_same_type(get_type(1), get_type(2)) != 'int':
+			print("Incorrect type", file=sys.stderr)
+			exit(53)
+
 		if check_type_var(1):
 			from_var1_indx = var_find_index(1)
 			val1 = arithm_oper(1, from_var1_indx)
@@ -653,12 +704,22 @@ while i < len(root):
 			val2 = arithm_oper(2, from_var2_indx)
 		else:
 			val2 = instruction.args[2].value
+
+		try:
+			str(int(val1) + int(val2))
+		except ValueError:
+			print("Invalid int value", file=sys.stderr)
+			exit(32)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) + int(val2)))
 
 	elif instruction.name == 'SUB':
 		to_var_indx = var_find_index(0)
 
+		if check_same_type(get_type(1), get_type(2)) != 'int':
+			print("Incorrect type", file=sys.stderr)
+			exit(53)
+
 		if check_type_var(1):
 			from_var1_indx = var_find_index(1)
 			val1 = arithm_oper(1, from_var1_indx)
@@ -670,12 +731,22 @@ while i < len(root):
 			val2 = arithm_oper(2, from_var2_indx)
 		else:
 			val2 = instruction.args[2].value
+
+		try:
+			str(int(val1) - int(val2))
+		except ValueError:
+			print("Invalid int type", file=sys.stderr)
+			exit(32)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) - int(val2)))
 
 	elif instruction.name == 'MUL':
 		to_var_indx = var_find_index(0)
 
+		if check_same_type(get_type(1), get_type(2)) != 'int':
+			print("Incorrect type", file=sys.stderr)
+			exit(53)
+
 		if check_type_var(1):
 			from_var1_indx = var_find_index(1)
 			val1 = arithm_oper(1, from_var1_indx)
@@ -687,12 +758,22 @@ while i < len(root):
 			val2 = arithm_oper(2, from_var2_indx)
 		else:
 			val2 = instruction.args[2].value
+
+		try:
+			str(int(val1) * int(val2))
+		except ValueError:
+			print("Invalid int type", file=sys.stderr)
+			exit(32)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) * int(val2)))
 
 	elif instruction.name == 'IDIV':
 		to_var_indx = var_find_index(0)
 
+		if check_same_type(get_type(1), get_type(2)) != 'int':
+			print("Incorrect type", file=sys.stderr)
+			exit(53)
+
 		if check_type_var(1):
 			from_var1_indx = var_find_index(1)
 			val1 = arithm_oper(1, from_var1_indx)
@@ -704,6 +785,16 @@ while i < len(root):
 			val2 = arithm_oper(2, from_var2_indx)
 		else:
 			val2 = instruction.args[2].value
+
+		try:
+			str(int(val1) // int(val2))
+		except ValueError:
+			print("Invalid int type", file=sys.stderr)
+			exit(32)
+
+		except ZeroDivisionError:
+			print("Division by zero", file=sys.stderr)
+			exit(57)
 
 		insert_into_var(get_frame(0), to_var_indx, 'int', str(int(val1) // int(val2)))
 
@@ -824,7 +915,7 @@ while i < len(root):
 		try:
 			chr(int(val))
 		except:
-			print("Incorrect Unicode value")
+			print("Incorrect Unicode value", file=sys.stderr)
 			exit(58)
 		else:
 			insert_into_var(get_frame(0), to_var_indx, 'string', chr(int(val)))
@@ -838,10 +929,10 @@ while i < len(root):
 		try:
 			ord(val1[int(val2)])
 		except IndexError:
-			print("Index out of range")
+			print("Index out of range", file=sys.stderr)
 			exit(58)
 		except:
-			print("Incorrect Unicode value")
+			print("Incorrect Unicode value", file=sys.stderr)
 			exit(58)
 		else:
 			insert_into_var(get_frame(0), to_var_indx, 'int', ord(val1[int(val2)]))
@@ -853,8 +944,8 @@ while i < len(root):
 		val2 = get_val(2)
 
 		if get_type(1) != 'string' or get_type(2) != 'string':
-			print("Incorrect data type")
-			exit(53)  # Check correct exit code TODO
+			print("Incorrect data type", file=sys.stderr)
+			exit(53)
 
 		string = val1 + val2
 
@@ -867,8 +958,8 @@ while i < len(root):
 		type1 = get_type(1)
 
 		if type1 != 'string':
-			print("Incorrect data type")
-			exit(53)  # Check for correct exit code TODO
+			print("Incorrect data type", file=sys.stderr)
+			exit(53)
 
 		val1 = len(val1)
 
@@ -881,20 +972,20 @@ while i < len(root):
 		type1 = get_type(1)
 
 		if type1 != 'string':
-			print("Incorrect data type")
-			exit(53)  # Check for correct exit code TODO
+			print("Incorrect data type", file=sys.stderr)
+			exit(53)
 
 		val2 = get_val(2)
 		type2 = get_type(2)
 
 		if type2 != 'int':
-			print("Incorrect data type")
-			exit(53)  # Check for correct exit code TODO
+			print("Incorrect data type", file=sys.stderr)
+			exit(53)
 
 		try:
 			val1[int(val2)]
 		except IndexError:
-			print("Index out of range")
+			print("Index out of range", file=sys.stderr)
 			exit(58)
 		else:
 			pass
@@ -909,24 +1000,24 @@ while i < len(root):
 		val1 = get_val(1)
 		type1 = get_type(1)
 		if type1 != 'int':
-			print("Incorrect data type")
-			exit(53)  # Check for correct exit code TODO
+			print("Incorrect data type", file=sys.stderr)
+			exit(53)
 
 		val2 = get_val(2)
 		if val2 == '':
-			print("Empty variable")
+			print("Empty string")
 			exit(58)
 
 		type2 = get_type(2)
 
 		if type0 != 'string' or type2 != 'string':
-			print("Incorrect data type")
-			exit(53)  # Check for correct exit code TODO
+			print("Incorrect data type", file=sys.stderr)
+			exit(53)
 
 		try:
 			val0[int(val1)]
 		except IndexError:
-			print("Index out of range")
+			print("Index out of range", file=sys.stderr)
 			exit(58)
 		else:
 			pass
@@ -937,9 +1028,12 @@ while i < len(root):
 	elif instruction.name == 'TYPE':
 		to_var_indx = var_find_index(0)
 
-		type1 = get_type(1)
-
-		insert_into_var(get_frame(0), to_var_indx, 'string', type1)
+		try:
+			get_type(1)
+		except TypeError:
+			insert_into_var(get_frame(0), to_var_indx, 'string', '')
+		else:
+			insert_into_var(get_frame(0), to_var_indx, 'string', get_type(1))
 
 	elif instruction.name == 'EXIT':
 		val = get_val(0)
@@ -947,11 +1041,11 @@ while i < len(root):
 		try:
 			int(val)
 		except ValueError:
-			print("Invalid exit code " + val)
+			print("Invalid exit code " + val, file=sys.stderr)
 			exit(57)
 		else:
 			if int(val) > 50 or int(val) < 0:
-				print("Invalid exit code " + val)
+				print("Invalid exit code " + val, file=sys.stderr)
 				exit(57)
 
 			exit(int(val))
@@ -972,15 +1066,10 @@ while i < len(root):
 
 	i += 1
 
-	# len(instruction.args), instruction.name
 	print("GLOBAL: ", frames.global_frame, file=sys.stderr)
 	print("LOCAL: ", frames.frame_stack, file=sys.stderr)
 	print("TEMP: ", frames.tmp_frame, file=sys.stderr)
 	print("STACK:", frames.stack, file=sys.stderr)
 	print("LABELS:", frames.labels, file=sys.stderr)
 	print("CALL_STACK:", frames.call_stack, file=sys.stderr)
-	print("FUNCTIONS: read operands:", len(instruction.args), "\n")
-
-if frames.jump is not None:
-	print("No label " + frames.jump + " found")
-	exit(53)  # Check correct error code TODO
+	print("FUNCTIONS: read operands:", len(instruction.args), "\n", file=sys.stderr)
