@@ -233,6 +233,9 @@ while(($input = fgets(STDIN)) !== false) { # Read STDIN until we reach the end.
 		}
 	}
 
+	if(empty($input))
+		continue;
+
 	$cut = explode('|', $input); # Cut $input into individuals segments.
 	$value; # Values of operands will be inserted here.
 

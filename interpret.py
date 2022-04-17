@@ -203,7 +203,6 @@ class Frames:
 				if var_name == self.tmp_frame[variable][0]:
 					return index
 				index += 1
-		print(index)
 
 
 class Argument:
@@ -553,7 +552,7 @@ child = list(root)
 
 while i < len(root):
 
-	print("CHILD:", child[i].get(key='order'), child[i].get(key='opcode'), child[i].tag, child[i].items(), file=sys.stderr)
+	# print("CHILD:", child[i].get(key='order'), child[i].get(key='opcode'), child[i].tag, child[i].items(), file=sys.stderr)
 	instruction = Instruction(name=child[i].get(key='opcode'), number=child[i].get(key='order'))
 
 	for arg in child[i]:
@@ -609,7 +608,7 @@ while i < len(root):
 					input_type = 'nil'
 
 		if val_type == 'bool':
-			if inp.lower() == 'true':
+			if inp[line_count].lower() == 'true':
 				insert_into_var(get_frame(0), to_var_indx, val_type, 'true')
 			else:
 				insert_into_var(get_frame(0), to_var_indx, val_type, 'false')
@@ -1003,7 +1002,6 @@ while i < len(root):
 
 		val2 = get_val(2)
 		type2 = get_type(2)
-
 		if type1 == 'int' and type2 == 'int':
 			insert_into_var(get_frame(0), to_var_indx, 'bool', str(int(val1) == int(val2)).lower())
 		elif type1 == 'bool' and type2 == 'bool':
@@ -1025,7 +1023,7 @@ while i < len(root):
 		elif type1 == 'nil' and type2 == 'nil':
 			insert_into_var(get_frame(0), to_var_indx, 'bool', 'true')
 
-		elif type1 == 'nil' or type1 == 'nil':
+		elif type1 == 'nil' or type2 == 'nil':
 			insert_into_var(get_frame(0), to_var_indx, 'bool', 'false')
 		else:
 			print("Incorrect type", file=sys.stderr)
@@ -1209,11 +1207,10 @@ while i < len(root):
 
 	i += 1
 
-
-	print("GLOBAL: ", frames.global_frame, file=sys.stderr)
-	print("LOCAL: ", frames.frame_stack, file=sys.stderr)
-	print("TEMP: ", frames.tmp_frame, file=sys.stderr)
-	print("STACK:", frames.stack, file=sys.stderr)
-	print("LABELS:", frames.labels, file=sys.stderr)
-	print("CALL_STACK:", frames.call_stack, file=sys.stderr)
-	print("FUNCTIONS: read operands:", len(instruction.args), "\n", file=sys.stderr)
+	#print("GLOBAL: ", frames.global_frame, file=sys.stderr)
+	#print("LOCAL: ", frames.frame_stack, file=sys.stderr)
+	#print("TEMP: ", frames.tmp_frame, file=sys.stderr)
+	#print("STACK:", frames.stack, file=sys.stderr)
+	#print("LABELS:", frames.labels, file=sys.stderr)
+	#print("CALL_STACK:", frames.call_stack, file=sys.stderr)
+	#print("FUNCTIONS: read operands:", len(instruction.args), "\n", file=sys.stderr)
