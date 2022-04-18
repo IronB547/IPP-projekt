@@ -12,6 +12,9 @@ import os.path
 from io import StringIO
 
 
+# BEGINNING of Functions and Classes
+# Enumeration class, I have forgotten about dictionaries, and it was too late for me to change the code, I have made
+# many changes/functions before I remembered they existed.
 class Functions(Enum):
 	DEFVAR = 0
 	MOVE = 1
@@ -50,6 +53,7 @@ class Functions(Enum):
 	BREAK = 34
 
 
+# A Constant array of function in IPPcode, as mentioned earlier, a dictionary would fit this purpose better.
 CONST_FUNC = 	[[1],  # DEFVAR
 				[2],  # MOVE
 				[3],  # ADD
@@ -88,15 +92,27 @@ CONST_FUNC = 	[[1],  # DEFVAR
 				]
 
 
+# Class Frames - Implements all frames in a class structure, it's my first time working with them, so
+# I hope I haven't made too many mistakes.
+# Every frame is implemented via a list, each variable is represented as a list inside said list, so variables in
+# frames would look like this: [['frame@var1', 'type', 'value'], ['frame@var2', 'type', 'value']] etc.
+# Empty variables do not have 'type', nor 'value', just a name in the list.
+# However, local frame is implemented with frame_stack, I am working with a list just like I would with stack, so I
+# append/pop the last list accordingly. Variables in local frame would look something like this:
+# [[[LF@var1], [LF@var2]], [[LF@VAR1], [LF@VAR2]]]. First list is the frame itself, second list is each individual
+# temporary frame and third list is composed of individual variables. The rightmost list is the top of the stack.
+# This rule applies to every stack-like structure I have used.
 class Frames:
 	def __init__(self):
-		self.global_frame = []
-		self.tmp_frame = None
-		self.frame_stack = []
-		self.stack = []
-		self.call_stack = []
-		self.labels = []
+		self.global_frame = []  # Global frame.
+		self.tmp_frame = None  # Temporary frame.
+		self.frame_stack = []  # Local frame.
+		self.stack = []  # Stack for PUSHS and POPS functions.
+		self.call_stack = []  # Stack for CALL and RETURN functions.
+		self.labels = []  # A list of labels, that is filled in by the first run through of the xml code.
 
+	# add_to_labels method - Inserts labels into label list.
+	# A for cycle iterates through the list to find duplicate label names.
 	def add_to_labels(self, label_name, index):
 		for name in self.labels:
 			if label_name == name[0]:
@@ -104,12 +120,15 @@ class Frames:
 				exit(52)
 		self.labels.append([label_name, index])
 
+	# search_labels method - Looks and return a label name from the label list.
 	def search_labels(self, label_name):
-
 		for name in self.labels:
 			if label_name == name[0]:
 				return name
 
+	# add_to_frame method - Implements insertion of variables to any frame.
+	# Redeclaration of variables is checked via search_frame method, this method simply adds variables.
+	# Temporary and local frames are an exception, we cannot add variables to empty frame.
 	def add_to_frame(self, f_type, var_name):
 		if f_type == "GF":
 			self.global_frame.append([var_name])
@@ -128,6 +147,9 @@ class Frames:
 
 			self.tmp_frame.append([var_name])
 
+	# search_frame method - Checks if variable exists on frame or not.
+	# For DEFVAR, no variable must be present, in order to define a new one.
+	# For any other function, only one variable must be present, we cannot have multiple variables.
 	def search_frame(self, f_type, var_name):
 		var_counter = 0
 		if f_type == "GF":
@@ -176,6 +198,8 @@ class Frames:
 				print("Variable " + var_name + " doesn't exist.", file=sys.stderr)
 				exit(54)
 
+	# return_index method - Finds the index of a variable in any frame.
+	# If TF or LF frame is empty, throw exception.
 	def return_index(self, f_type, var_name):
 		index = 0
 		if f_type == "GF":
@@ -205,26 +229,37 @@ class Frames:
 				index += 1
 
 
+# Argument class - Used for storing arguments from xml source file.
+# Class is mainly used by Instruction class, which stores all the necessary information about processed instruction.
+# arg_type = string, type of argument.
+# value = string, value of argument.
 class Argument:
 	def __init__(self, arg_type, value):
 		self.type = arg_type
 		self.value = value
 
 
+# Instruction class - Used for storing data of processed instruction.
+# name = name of opcode i.e. DEFVAR, MOVE, JUMP, etc.
+# args = list that has a type and value of processed instruction.
 class Instruction:
-	def __init__(self, name, number):
+	def __init__(self, name):
 		self.name = name
-		self.number = number
 		self.args = []
 
+	# add_argument method - Inserts values inside the args list.
 	def add_argument(self, arg_type, value):
 		self.args.append(Argument(arg_type, value))
 
 
+# Function get_frame - Various functions are called by taking the frame of the variable, name of variable and values.
+# argument_num = int, which argument is being processed (1,2 or 3).
+# For example, if a function requires a frame, such as insert_into_var(), get_frame function return 'GF', 'LF' or 'TF'.
 def get_frame(argument_num):
 	return instruction.args[argument_num].value.partition("@")[0]
 
 
+# Function check_type_var - Checks if argument (1,2 or 3) is a variable or not.
 def check_type_var(arg_num):
 	if instruction.args[arg_num].type == 'var':
 		return True
@@ -232,10 +267,14 @@ def check_type_var(arg_num):
 		return False
 
 
+# Function LF_len - Returns length of frame stack.
+# Used for indexing the last temporary frame inside local frame.
 def LF_len():
 	return len(frames.frame_stack) - 1
 
 
+# Function to_LF - Converts temporary frame variables to local frame variables.
+# Throw exception, if temporary frame is empty.
 def to_LF():
 	if frames.tmp_frame is None:
 		print("Empty Temp frame", file=sys.stderr)
@@ -251,6 +290,7 @@ def to_LF():
 		variable[0] = new_var
 
 
+# Function to_TF - Converts local frame variables to temporary frame variables.
 def to_TF():
 	for variable in frames.tmp_frame:
 		new_var = variable[0].partition("@")
@@ -261,6 +301,9 @@ def to_TF():
 		variable[0] = new_var
 
 
+# Function var_find_index - Simplification as well as throwing exception each time we need to find index of a variable.
+# argument_num = int, which argument is being processed (1,2 or 3).
+# Function returns the index of variable inside any frame.
 def var_find_index(argument_num):
 	if frames.return_index(get_frame(argument_num), instruction.args[argument_num].value) is None:
 		print("Non defined variable " + instruction.args[argument_num].value, file=sys.stderr)
@@ -269,6 +312,10 @@ def var_find_index(argument_num):
 	return frames.return_index(get_frame(argument_num), instruction.args[argument_num].value)
 
 
+# Function find_var - Further simplification, after we find the index, we take the entire variable and return it.
+# frame = string, on what frame is the variable is located.
+# from_var_indx = int, where is the variable located.
+# Checks for empty variable for various reasons.
 def find_var(frame, from_var_indx):
 	if frame == 'GF':
 		if len(frames.global_frame[from_var_indx]) > 1:
@@ -300,6 +347,9 @@ def find_var(frame, from_var_indx):
 				print("Variable " + frames.tmp_frame[from_var_indx][0] + " is empty.", file=sys.stderr)
 				exit(56)
 
+# Function convert_ascii - Function correctly converts escape sequences into ascii values.
+# val = string, value to be converted.
+# Returns converted string with correct escaped sequences.
 def convert_ascii(val):
 	if val is not None:
 		index = 0
@@ -316,6 +366,12 @@ def convert_ascii(val):
 
 	return val
 
+# Function insert_into_var - Very important function, inserts into correct variable in any frame.
+# frame = string, on what frame is the variable is located.
+# to_var_indx = int, where the number is located (in frame).
+# from_type = string, 'type' of value to be inserted.
+# from_value = string, 'value' of value to be inserted.
+# Function correctly appends new values, or changes already set values.
 def insert_into_var(frame, to_var_indx, from_type, from_value):
 	if frame == 'GF':
 		from_value = convert_ascii(from_value)
@@ -344,6 +400,10 @@ def insert_into_var(frame, to_var_indx, from_type, from_value):
 			frames.tmp_frame[to_var_indx].append(from_value)
 
 
+# Function arithm_oper - Simple function used to not repeat code for ADD, SUB, MUL, IDIV functions.
+# arg_num = int, which argument is being processed (1,2 or 3).
+# from_var_indx = int, where is the variable located.
+# Checks for correct type of value and returns it.
 def arithm_oper(arg_num, from_var_indx):
 	val = find_var(get_frame(arg_num), from_var_indx)
 	if val[1] == 'int':
@@ -355,6 +415,10 @@ def arithm_oper(arg_num, from_var_indx):
 	return val
 
 
+# Function logic_oper - Same as arithm_oper, but just for AND, OR, NOT.
+# arg_num = int, which argument is being processed (1,2 or 3).
+# from_var_indx = int, where is the variable located.
+# Checks for correct type of value and returns it.
 def logic_oper(arg_num, from_var_indx):
 	val = find_var(get_frame(arg_num), from_var_indx)
 	if val[1] == 'bool':
@@ -366,6 +430,10 @@ def logic_oper(arg_num, from_var_indx):
 	return val
 
 
+# Function get_val - Simplification of getting values from arguments.
+# arg_num = int, which argument is being processed (1,2 or 3).
+# Type 'string' with None value is interpreted as empty string.
+# Returns the value of argument, if variable, get variable value.
 def get_val(arg_num):
 
 	if check_type_var(arg_num):
@@ -382,6 +450,10 @@ def get_val(arg_num):
 	return val
 
 
+# Function get_type - Simplification of getting types from arguments.
+# arg_num = int, which argument is being processed (1,2 or 3).
+# Type 'string' with None value is interpreted as empty string.
+# Returns the type of argument, if variable, get variable type.
 def get_type(arg_num):
 	if check_type_var(arg_num):
 		from_var_indx = var_find_index(arg_num)
@@ -393,6 +465,10 @@ def get_type(arg_num):
 	return val_type
 
 
+# Function check_same_type - Used to determine if function has same types.
+# type1 = string, type of first argument/variable.
+# type2 = string, type of second argument/variable.
+# Function returns the matched type, otherwise throws exception
 def check_same_type(type1, type2):
 	if type1 == 'int' and type2 == 'int':
 		return 'int'
@@ -405,16 +481,23 @@ def check_same_type(type1, type2):
 	else:
 		print("Not same types", file=sys.stderr)
 		exit(53)
+# END of Functions and Classes
 
 
+# BEGINNING of Interpreter
+# Now begins the actual code. First, we need to parse arguments like --source and --input. For that, I chose argparse.
+# It was the easiest to understand and implement.
 argp = argparse.ArgumentParser()
-argp.add_argument("--source", nargs=1, type=argparse.FileType('r'), help="TODO")
-argp.add_argument("--input", nargs=1, help="TODO")
+argp.add_argument("--source", nargs=1, type=argparse.FileType('r'), help="Path to the '.src' file, can also be loaded from STDIN. Only one source may be read from STDIN")
+argp.add_argument("--input", nargs=1, help="Path to the '.in' file. Only one source may be read from STDIN" )
 
 args = argp.parse_args()
 
+# Load files inside variables
 source_file = args.source
 input_file = args.input
+
+# Here we check if file exists, as well as correct usage of both parameters.
 if args.source is not None and args.input is not None:
 	if os.path.exists(args.input[0]):
 		input_file = args.input[0]
@@ -447,6 +530,8 @@ else:
 	print("Incorrect combination of input files, use --h, --help for more info", file=sys.stderr)
 	exit(10)
 
+# Now, onto parsing the XML file. I have used the Etree library.
+# Try EtreeParse, if parse error, throw exception.
 try:
 	tree = ET.parse(source_file[0])
 except ET.ParseError:
@@ -455,9 +540,11 @@ except ET.ParseError:
 else:
 	pass
 
-# load xml
+# Get root of the tree.
 root = tree.getroot()
 
+# Now come a lot of XML structure checks.
+# Incorrect program language.
 if root.tag != "program" or root.get(key='language') != "IPPcode22":
 	print("Incorrect language", file=sys.stderr)
 	exit(32)
@@ -465,6 +552,8 @@ if root.tag != "program" or root.get(key='language') != "IPPcode22":
 frames = Frames()
 first_iter = True
 
+# Firstly, I iterate through the entire file, check XML structure of instructions,
+# sort operands by numbers for the second run through.
 for child in root:
 	try:
 		root[:] = sorted(root, key=lambda child: int(child.get(key='order')))
@@ -477,6 +566,8 @@ for child in root:
 	else:
 		root[:] = sorted(root, key=lambda child: int(child.get(key='order')))
 
+# Second run through.
+# Sorting arguments by numbers, checking correct XML structure of each argument.
 op_num = 0
 index = 0
 for child in root:
@@ -518,7 +609,6 @@ for child in root:
 
 		child[:] = sorted(child, key=lambda argument: argument.tag)
 
-
 	op_num = int(child.get(key='order'))
 	arg1_flag = False
 	arg2_flag = False
@@ -546,18 +636,24 @@ for child in root:
 	index += 1
 
 
+# Third and final run through. Actual interpreting of the XML file.
 i = 0
 line_count = 0
 child = list(root)
 
+# I have selected while for easy jumps.
+# Iterate through root (program in XML).
 while i < len(root):
 
-	# print("CHILD:", child[i].get(key='order'), child[i].get(key='opcode'), child[i].tag, child[i].items(), file=sys.stderr)
-	instruction = Instruction(name=child[i].get(key='opcode'), number=child[i].get(key='order'))
+	# Load instruction
+	instruction = Instruction(name=child[i].get(key='opcode'))
 
+	# Iterate through each child (instruction in XML).
 	for arg in child[i]:
-		instruction.add_argument(arg.get(key='type'), arg.text)
-	# I don't know how else I should solve this, so this will be a switch like structure
+		instruction.add_argument(arg.get(key='type'), arg.text)  # Get type and value in class Instruction.
+
+	# Again, I paid here for not using the dictionary, but it was too late. Switch like structure.
+	# Sadly, run time is going to be slow, it already is going to be with big frames and loops.
 	if instruction.name == 'DEFVAR':
 		if instruction.args[0].type != 'var':
 			print("Incorrect type: " + instruction.args[0].type + " var expected.", file=sys.stderr)
@@ -584,16 +680,33 @@ while i < len(root):
 		to_var_indx = var_find_index(0)
 
 		if input_file is None:
-			inp = input()
+			try:
+				inp = input()
+			except EOFError:
+				insert_into_var(get_frame(0), to_var_indx, 'nil', 'nil')
+				i += 1
+				continue
+			else:
+				pass
+
 		else:
 			file = open(input_file, 'r')
 			inp = file.read()
 			inp = inp.splitlines()
+			try:
+				inp[line_count]
+			except IndexError:
+				insert_into_var(get_frame(0), to_var_indx, 'nil', 'nil')
+				i += 1
+				continue
+			else:
+				inp = inp[line_count]
 
 		val_type = get_val(1)
+
 		if val_type == 'int':
 			try:
-				int(inp[line_count])
+				int(inp)
 			except ValueError:
 				input_type = 'nil'
 			else:
@@ -608,14 +721,14 @@ while i < len(root):
 					input_type = 'nil'
 
 		if val_type == 'bool':
-			if inp[line_count].lower() == 'true':
+			if inp.lower() == 'true':
 				insert_into_var(get_frame(0), to_var_indx, val_type, 'true')
 			else:
 				insert_into_var(get_frame(0), to_var_indx, val_type, 'false')
 		elif val_type == 'nil':
 			insert_into_var(get_frame(0), to_var_indx, val_type, 'nil')
 		else:
-			insert_into_var(get_frame(0), to_var_indx, input_type, inp[line_count])
+			insert_into_var(get_frame(0), to_var_indx, input_type, inp)
 
 		if input_file is not None:
 			file.close()
@@ -731,7 +844,6 @@ while i < len(root):
 		to_LF()
 		frames.frame_stack.append(frames.tmp_frame)
 		frames.tmp_frame = None
-
 
 	elif instruction.name == 'POPFRAME':
 
@@ -1207,10 +1319,10 @@ while i < len(root):
 
 	i += 1
 
-	#print("GLOBAL: ", frames.global_frame, file=sys.stderr)
-	#print("LOCAL: ", frames.frame_stack, file=sys.stderr)
-	#print("TEMP: ", frames.tmp_frame, file=sys.stderr)
-	#print("STACK:", frames.stack, file=sys.stderr)
-	#print("LABELS:", frames.labels, file=sys.stderr)
-	#print("CALL_STACK:", frames.call_stack, file=sys.stderr)
-	#print("FUNCTIONS: read operands:", len(instruction.args), "\n", file=sys.stderr)
+	# print("GLOBAL: ", frames.global_frame, file=sys.stderr)
+	# print("LOCAL: ", frames.frame_stack, file=sys.stderr)
+	# print("TEMP: ", frames.tmp_frame, file=sys.stderr)
+	# print("STACK:", frames.stack, file=sys.stderr)
+	# print("LABELS:", frames.labels, file=sys.stderr)
+	# print("CALL_STACK:", frames.call_stack, file=sys.stderr)
+	# print("FUNCTIONS: read operands:", len(instruction.args), "\n", file=sys.stderr)
