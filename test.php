@@ -86,7 +86,7 @@ function file_iteration($rec_search, $test_path) {
 		return new RecursiveIteratorIterator(
 					new RecursiveDirectoryIterator($test_path));
 	else
-		return new DirectoryIterator($test_path);
+		return new RecursiveDirectoryIterator($test_path);
 }
 
 # check_default_files - Function checks if files '.rc' '.in' '.out' exist, if not, it creates them.
