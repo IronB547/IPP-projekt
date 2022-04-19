@@ -92,7 +92,7 @@ CONST_FUNC = 	[[1],  # DEFVAR
 				]
 
 
-# Class Frames - Implements all frames in a class structure, it's my first time working with them, so
+# Class Frames - Implements all frames in a class structure. This is my first time working with them, so
 # I hope I haven't made too many mistakes.
 # Every frame is implemented via a list, each variable is represented as a list inside said list, so variables in
 # frames would look like this: [['frame@var1', 'type', 'value'], ['frame@var2', 'type', 'value']] etc.
@@ -115,7 +115,7 @@ class Frames:
 		self.frame_stack = []  # Local frame.
 		self.stack = []  # Stack for PUSHS and POPS functions.
 		self.call_stack = []  # Stack for CALL and RETURN functions.
-		self.labels = []  # A list of labels, that is filled in by the first run through of the xml code.
+		self.labels = []  # A list of labels, that is filled in by the first run throughout the xml code.
 
 	# add_to_labels method - Inserts labels into label list.
 	# A for cycle iterates through the list to find duplicate label names.
