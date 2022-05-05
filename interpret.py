@@ -1335,12 +1335,12 @@ while i < len(root):
 	i += 1  # Increment cycle => next operand.
 
 	# Debug prints
-	# print("GLOBAL: ", frames.global_frame, file=sys.stderr)
-	# print("LOCAL: ", frames.frame_stack, file=sys.stderr)
-	# print("TEMP: ", frames.tmp_frame, file=sys.stderr)
-	# print("STACK:", frames.stack, file=sys.stderr)
-	# print("LABELS:", frames.labels, file=sys.stderr)
-	# print("CALL_STACK:", frames.call_stack, file=sys.stderr)
-	# print("FUNCTIONS: read operands:", len(instruction.args), "\n", file=sys.stderr)
+	print("GLOBAL: ", frames.global_frame, file=sys.stderr)
+	print("LOCAL: ", frames.frame_stack, file=sys.stderr)
+	print("TEMP: ", frames.tmp_frame, file=sys.stderr)
+	print("STACK:", frames.stack, file=sys.stderr)
+	print("LABELS:", frames.labels, file=sys.stderr)
+	print("CALL_STACK:", frames.call_stack, file=sys.stderr)
+	print("FUNCTIONS: read operands:", len(instruction.args), "\n", file=sys.stderr)
 
 	# Hooray, we've reached the end, thank you for reading :)

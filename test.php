@@ -8,6 +8,7 @@
 ob_start();
 
 # Echoing the HTML to STDOUT. Errors are handled with error_log.
+# Printing the head of every HTML that will be generated.
 echo('<!DOCTYPE html>
 <html>
 	<head>
@@ -76,10 +77,10 @@ function help_print() {
 	exit(0);
 }
 
-# file_iteration - Function returns a file iterator according to settings.
+# file_iteration - Function returns a file iterator according to configuration.
 # $rec_search = bool, either return recursive or normal iterator.
 # $test_path = either default, or --directory path.
-# Function returns a file iterator.
+# Function returns a file iterator, that is used to iterate through files in directories.
 function file_iteration($rec_search, $test_path) {
 
 	if($rec_search)
@@ -89,9 +90,9 @@ function file_iteration($rec_search, $test_path) {
 		return new RecursiveDirectoryIterator($test_path);
 }
 
-# check_default_files - Function checks if files '.rc' '.in' '.out' exist, if not, it creates them.
+# check_default_files - Function checks if files '.in', '.out' and '.rc' exist, if not, create them.
 # $file = source file that must exist in order to create said files.
-# $dir = path to the directory where you create the default files.
+# $path = path to the directory where you create the default files.
 function check_default_files($file, $path) {
 
 	if(!file_exists($check_file = $path . $file . ".in")) {
@@ -109,9 +110,9 @@ function check_default_files($file, $path) {
 	}
 }
 
-# rc_code - Returns the contents of '.rc' file
+# rc_code - Returns the contents of '.rc' file as integer.
 # $file = '.rc' file to be read.
-# Returns correct code or throws exception.
+# Returns correct code (int) or throw an exception.
 function rc_code($file) {
 	$content = file_get_contents($file);
 
@@ -131,11 +132,12 @@ function clean_file($file, $path) {
 		unlink($clean_file);
 }
 
-# test_interpret - Function to make interpret-only tests.
+# test_interpret - Function to only test the interpreter.
 # $src = source file to be interpreted.
 # $in = input file to be interpreted.
 # $out = output file to be interpreted.
 # $rc = expected error code to be interpreted.
+# $final_res is the definitive result of the test, if passed, the test has passed.
 function test_interpret($src, $in, $out, $rc) {
 	global $int_path, $noclean, $current_path, $passed, $failed, $counter;
 
@@ -145,7 +147,7 @@ function test_interpret($src, $in, $out, $rc) {
 	$final_res = "failed";
 	$output = "tmp.txt";
 
-	# Execute interpret.py script.
+	# Execute interpret.py script with correct source file and input file.
 	exec("python3.8 ". $int_path. " --source=\"". $src. "\" > ". $current_path. $output. " --input=\"". $in. "\"", result_code: $result);
 
 	# Get expected error code.
@@ -153,16 +155,16 @@ function test_interpret($src, $in, $out, $rc) {
 
 	# Check gotten vs expected error code.
 	if($result == $rc_code) {
-		$code_check = "passed"; # Code check has passed at this point
+		$code_check = "passed"; # Code check has passed at this point, same value.
 
-		if($result == 0) { # if the result is 0, interpretation completed without issues, compare with diff.
+		if($result == 0) { # if the result is 0, interpretation didn't get any errors, compare output with diff.
 			exec("diff ". $current_path. $output. " " . $out, result_code: $diff_code);
 			if($diff_code !== 0) # If not the same type as a 0, test has failed.
 				$diff = "failed";
 		}
 	}
 
-	# If diff and code check have passed, final result is set to "passed". Increment $passed counter, else failed counter.
+	# If $diff and $code_check have passed, final result is set to "passed". Increment $passed counter, else $failed counter.
 	if(strcmp($diff, "passed") == 0 and strcmp($code_check, "passed") == 0) {
 		$final_res = "passed";
 		$passed++;
@@ -170,7 +172,7 @@ function test_interpret($src, $in, $out, $rc) {
 	else
 		$failed++;
 
-	# echoing result to STDOUT
+	# echo results to HTML table.
 	echo ("
 			<tr>
 				<td>
@@ -203,19 +205,20 @@ function test_interpret($src, $in, $out, $rc) {
 			</tr>';
 
 	# print result to STDERR.
-	error_log("Status: ". $diff. "\n");
+	error_log("Status: ". $final_res. "\n");
 
-	# if noclean is true, do not clean 
+	# if noclean is true, do not clean temporary files.
 	if(!$noclean) {
 		clean_file($output, $current_path);
 	}
 }	
 
-# test_parser - Function to make parser-only tests.
+# test_parser - Function to only test the parser.
 # $src = source file to be parsed.
 # $in = input file to be parsed.
 # $out = output file to be parsed.
 # $rc = expected error code to be parsed.
+# $final_res is the definitive result of the test, if passed, the test has passed.
 function test_parser($src, $in, $out, $rc) {
 	global  $parse_path, $xml_lib_path, $xml_lib_options,
 			$noclean, $current_path, $passed, $failed, $counter;
@@ -230,13 +233,14 @@ function test_parser($src, $in, $out, $rc) {
 	# Execute parser script.
 	exec("php8.1 ". $parse_path. " < ". $src. " > ". $current_path. $output, result_code: $result);
 
+	# Get expected error code.
 	$rc_code = rc_code($rc);
 
 	# If result is equal to expected error code code check has passed.
 	if($result == $rc_code) {
 		$code_check = "passed";
 
-		if ($result == 0) { # If result is 0, parser finished without issues, compare with JExemXML.
+		if ($result == 0) { # If result is 0, parser finished without errors, compare output with JExemXML.
 			exec("java -jar ". $xml_lib_path. " ". $current_path. $output. " ". $out. " ". $current_path. $xml_delta. " ". $xml_lib_options, result_code: $diff_code);
 			if ($diff_code !== 0) { # If diff_code isn't same type as 0, result is different than expected.
 				$xml_diff = "failed";
@@ -244,7 +248,7 @@ function test_parser($src, $in, $out, $rc) {
 		}
 	}
 
-	# If code check and xml_diff is "passed", final result is "passed" and increpent $passed counter. Else failed counter.
+	# If $code_check and xml_diff is "passed", final result is "passed" and increpent $passed counter. Else increment $failed counter.
 	if(strcmp($xml_diff, "passed") == 0 and strcmp($code_check, "passed") == 0) {
 		$final_res = "passed";
 		$passed++;
@@ -252,7 +256,7 @@ function test_parser($src, $in, $out, $rc) {
 	else
 		$failed++;
 
-	# Echoing HTML result to STDOUT
+	# echo results to HTML table.
 	echo ("
 			<tr>
 				<td>
@@ -284,9 +288,10 @@ function test_parser($src, $in, $out, $rc) {
 			'
 			</tr>';
 
-	error_log("Status: ". $xml_diff. "\n");
+	# echo status to STDERR.
+	error_log("Status: ". $final_res. "\n");
 
-	# If noclean is true, do not clean tmp files created by parser.php.
+	# If noclean is true, do not clean temporary files.
 	if(!$noclean) {
 		clean_file($output, $current_path);
 		clean_file($xml_delta, $current_path);
@@ -299,21 +304,26 @@ function test_parser($src, $in, $out, $rc) {
 # $in = input file to be parsed and interpreted.
 # $out = output file to be parsed and interpreted.
 # $rc = expected error code to be parsed and interpreted.
+# parse_res = contains passed/failed depending on the result of parser result.
+# int_res = contains passed/failed depending on the result of interpreter result.
+# $final_res is the definitive result of the test, if passed, the test has passed.
 function test_both($src, $in, $out, $rc) {
 	global 	$test_path, $int_path, $parse_path, $current_path,
 			$noclean, $rec_search, $both,
 			$xml_lib_path, $xml_lib_options,
 			$failed, $passed, $counter;
 
-	# Default settings
+	# Default settings and tmp files for parser.
 	$output_parse = "tmp_parse.xml";
 	$parse_res = "failed";
 	$skip_int = false;
 
+	# Default settings and tmp files for interpreter.
 	$output_int = "tmp_int.txt";
 	$int_diff = "passed";
 	$int_res = "failed";
 
+	# Default final result.
 	$final_res = "failed";
 
 	# BEGINNING of both tests.
@@ -330,13 +340,14 @@ function test_both($src, $in, $out, $rc) {
 			$final_res = "passed";
 			$skip_int = true;
 		}
-		else
+		else # If parser result code is 21/22/23, but output is different, test has failed.
 			$parse_res = "failed";
+			$skip_int = true;
 	} # Otherwise, parse passed.
 	else if($p_result == 0)
 		$parse_res = "passed";
 
-	if(!$skip_int) {
+	if(!$skip_int) { # If parse test has failed, no need to run interpreter test.
 
 		# Execute python script.
 		exec("python3.8 ". $int_path. " --source=\"". $current_path. $output_parse. "\" > ". $current_path. $output_int. " --input=\"". $in. "\"", result_code: $i_result);
@@ -345,9 +356,9 @@ function test_both($src, $in, $out, $rc) {
 		if($i_result == $rc_code) {
 			$int_res = "passed";
 
-			if($i_result == 0) { # If result is equal to 0, check for diff in output files.
+			if($i_result == 0) { # If result is equal to 0, check for diff in output in '.out' files.
 				exec("diff ". $current_path. $output_int. " " . $out, result_code: $diff_code);
-				if($diff_code !== 0)
+				if($diff_code !== 0) # If diff is not same type as 0, the output differs => failed test.
 					$int_diff = "failed";
 			}
 		}
@@ -366,7 +377,7 @@ function test_both($src, $in, $out, $rc) {
 		$failed++;
 	}
 
-	# Print HTML to STDOUT
+	# echo results to HTML table.
 	echo ("
 			<tr>
 				<td>
@@ -401,6 +412,7 @@ function test_both($src, $in, $out, $rc) {
 			'
 			</tr>';
 
+	# echo results to STDERR.
 	error_log("Parser status: ". $parse_res. "\n". "Interpreter status: ". $final_res. "\n");
 
 	# If noclean is true, do not delete tmp files created by both parser and interpret.
@@ -410,8 +422,8 @@ function test_both($src, $in, $out, $rc) {
 	}
 }
 
-# setup_tests - Function that gets all the correct codes and settings ready
-# before any testing can begin.
+# setup_tests - Function that gets all the correct settings and prepares to run the test script.
+# Function returns either boolean values or paths according to each option.
 function setup_test() {
 	global 	$test_path, $int_path, $int_only, 
 			$parse_path, $parse_only, 
@@ -459,7 +471,7 @@ function setup_test() {
 			print_error("Cannot find file". $parse_path);
 		}
 
-		if(substr($parse_path, -1) != "/") # add / at the end of path.
+		if(substr($parse_path, -1) != "/") # add implicit / at the end of path if none is present.
 			$parse_path = $parse_path. "/";
 	}
 
@@ -471,11 +483,11 @@ function setup_test() {
 			print_error("Cannot find file". $int_path);
 		}
 
-		if(substr($int_path, -1) != "/") # add / at the end of path.
+		if(substr($int_path, -1) != "/") # add implicit / at the end of path if none is present.
 			$int_path = $int_path. "/";
 	}
 
-	# Set parser only flag to true. Throw exception if int-only flag is true.
+	# Set parser only flag to true. Throw exception if int-only flag is also true.
 	if(array_key_exists("parse-only", $option)) {
 		$parse_only = true;
 		$both = false;
@@ -484,7 +496,7 @@ function setup_test() {
 			print_error("Cannot combine interpreter only and parser only commands");
 		}
 
-		# Printing headers for HTML table.
+		# echoing header table for HTML table.
 		echo ('
 		<h1 align="center">Parser only tests</h1>
 		<table align="center"; style="float: left; margin-left: 35px">
@@ -519,7 +531,7 @@ function setup_test() {
 			print_error("Cannot combine interpreter only and parser only commands");
 		}
 
-		# Printing headers for HTML table.
+		# echoing header table for HTML table.
 		echo ('
 		<h1 align="center">Interpreter only tests</h1>
 		<table align="center"; style="float: left; margin-left: 35px">
@@ -549,15 +561,23 @@ function setup_test() {
 	if(array_key_exists("jexampath", $option)) {
 		$xml_lib_path = $option["jexampath"];
 
-		if(substr($xml_lib_path, -1) != "/") # add / at the end of path.
+		if(substr($xml_lib_path, -1) != "/") # add implicit / at the end of path if none is present.
 			$xml_lib_path = $xml_lib_path. "/";
 
 		if(!file_exists($xml_lib_path)) {
 			print_error("Cannot find file". $xml_lib_path);
 		}
 
-		$xml_lib_path = $option["jexampath"] . "jexamxml.jar";
-		$xml_lib_options = $option["jexampath"] . "options";
+		if(substr($xml_lib_path, -1) == "/") # If the inserted path ends in directory, take jar file.
+			$xml_lib_path = $option["jexampath"] . "jexamxml.jar";
+
+		else if(strcmp(substr($xml_lib_path, -12), "jexamxml.jar") == 0) # If path leads to directory, take path.
+			$xml_lib_path = $option["jexampath"];
+
+		if(substr($xml_lib_options, -1) == "/") # If the inserted path ends in directory, take options file.
+			$xml_lib_options = $option["jexampath"] . "options";
+		else if(strcmp(substr($xml_lib_path, -12), "options") == 0)  # If path leads to directory, take path.
+			$xml_lib_options = $option["jexampath"];
 	}
 
 	# Set noclean flag to true.
@@ -567,6 +587,10 @@ function setup_test() {
 }
 
 # run_test - Function that runs the test script.
+# Script iterates through directory iterator via for. (also adds an implicit /)
+# It checks for any '.src' files present and generates all necessary files.
+# Then decide which test scenario should be used.
+# If a '.src' file was inserted and it doesn't exist, throw exception.
 function run_test() {
 	global 	$test_path, $int_path, $int_only,
 			$parse_path, $parse_only,
@@ -614,7 +638,7 @@ function run_test() {
 # Run initial setup.
 setup_test();
 
-# Printing HTML table headers for testing both interpreter and parser tests.
+# Echoing header table for HTML table when testing both interpreter and parser tests.
 if($both) {
 	echo ('
 		<h1 align="center">Interpreter and Parser tests</h1>
@@ -644,7 +668,7 @@ if($both) {
 			</tr>');
 }
 
-# Run the test script with the designated setting.
+# After setting up everything, we can move to running the test script.
 run_test();
 
 # Print the ending of HTML file.
@@ -661,7 +685,7 @@ echo('
 	<body>
 </html>");
 
-# Print result to STDERR
+# Print final results to STDERR.
 error_log("Tests passed: $passed");
 error_log("Tests failed: $failed");
 
