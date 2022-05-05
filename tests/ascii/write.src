@@ -1,0 +1,7 @@
+.IPPcode22
+
+Defvar GF@a
+
+MOVE GF@a string@\010Hello\035World\010
+
+WRITE string@\010Hello\035World\010
